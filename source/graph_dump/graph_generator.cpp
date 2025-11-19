@@ -4,11 +4,12 @@
 #include <assert.h>
 
 
-#include "debug/graph_generator.h"
-#include "akinator/tree.h"
+#include "graph_dump/graph_generator.h"
+#include "diff/diff_defs.h"
+#include "tree/tree.h"
 
 
-static void generateNode(Node* node, FILE* graph_file, int rank, int* counter)
+static void generateNode(TreeNode* node, FILE* graph_file, int rank, int* counter)
 {
     assert(node); assert(graph_file); assert(counter);
    
@@ -24,8 +25,8 @@ static void generateNode(Node* node, FILE* graph_file, int rank, int* counter)
         fprintf(graph_file, "fillcolor=\"#FCCC94\", color=\"#F87C08\", "); //E47C4C
 
     fprintf(graph_file, "penwidth=2.0, style=filled, label="
-                         "\"{<pointer>%p | '%s' | {<left>",
-                        node, node->data);
+                         "\"{<pointer>%p | 'no data' | {<left>",
+                        node);
 
     if (node->left)  fprintf(graph_file, "%p", node->left);
     else             fprintf(graph_file, "nil");
@@ -60,7 +61,6 @@ void generateGraph(BinaryTree* tree, const char* graph_filename)
     assert(graph_file);
 
     fprintf(graph_file, "digraph Tree {\n");
-    fprintf(graph_file, "\tcharset=\"UTF-8\"\n");
     fprintf(graph_file, "\trankdir=TB\n");
     fprintf(graph_file, "\tgraph[splines=line];\n");
 
@@ -72,4 +72,3 @@ void generateGraph(BinaryTree* tree, const char* graph_filename)
 
     assert(fclose(graph_file) == 0);
 }
-

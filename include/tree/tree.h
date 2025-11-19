@@ -1,70 +1,48 @@
-#ifndef INCLUDE_TREE_TREE_H_
-#define INCLUDE_TREE_TREE_H_
+#ifndef TREE_H_
+#define TREE_H_
 
 
-#include "./data.h"
-#include "./menu.h"
-#include "./io.h"
-#include "./comparison.h"
+#include "diff/diff_defs.h"
+#include "graph_dump/html_builder.h"
+#include "status.h"
 
 
-#ifdef DEBUG
-
-#include "../debug/html_builder.h"
-
-
-#define TREE_INIT(name)                          \
-    BinaryTree name = {};                        \
-    name.debug.creation = (TreeCreationInfo) {   \
-        #name, __FILE__, __func__, __LINE__      \
-    }
+#define TREE_CREATE(name, identifier)            \
+    treeConstructor(name, identifier, #name, __FILE__, __func__, __LINE__)
 
 
-#define TREE_DUMP(tree, __status, format, ...)   \
-    treeDump(tree, __status, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
+#define TREE_DUMP(diff, tree, _status, format, ...)   \
+    treeDump(diff ,tree, _status, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 
 
-#define TREE_VERIFY(tree, format, ...)                       \
+#define TREE_VERIFY(diff, tree, format, ...)                       \
     do {                                                     \
-        TreeStatus _status = treeVerify(tree);               \
-        TREE_DUMP(tree, _status, format, ##__VA_ARGS__);     \
-        if (_status != TREE_OK) {                            \
+        OperationStatus _status = treeVerify(tree);               \
+        TREE_DUMP(diff, tree, _status, format, ##__VA_ARGS__);     \
+        if (_status != STATUS_OK) {                            \
             return _status;                                  \
         }                                                    \
     } while (0)
-
-#endif // DEBUG
 
 
 #define GENERATE_STATUS_MESSAGE(_status, message)      \
     ("[" #_status "] " message)
 
 
-#define RETURN_IF_NOT_OK(_status) if (_status != TREE_OK) return _status
+void openDumpFile(Differentiator* diff);
 
 
-#define RETURN_IF_STACK_ERROR(_status) if (_status != SUCCESS) return TREE_STACK_ERROR
+OperationStatus treeVerify(BinaryTree* tree);
 
 
-void printStatusMessage(TreeStatus status);
+OperationStatus createNode(TreeNode** node);
 
 
-TreeStatus treeVerify(BinaryTree* tree);
-
-
-TreeStatus readUserAnswer(char* buffer, int size);
-
-
-TreeStatus createNode(Node** node);
-
-
-TreeStatus akinatorGuess(BinaryTree* tree);
-
-
-TreeStatus treeConstructor(BinaryTree* tree, const int argc, const char** argv);
+OperationStatus treeConstructor(BinaryTree* tree, const char* identifier, const char* name,
+                                const char* file, const char* function, int line);
 
 
 void treeDestructor(BinaryTree* tree);
 
 
-#endif // INCLUDE_TREE_TREE_H_
+#endif // TREE_H_
