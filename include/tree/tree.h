@@ -29,9 +29,6 @@
     ("[" #_status "] " message)
 
 
-void openDumpFile(Differentiator* diff);
-
-
 OperationStatus treeVerify(BinaryTree* tree);
 
 

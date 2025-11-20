@@ -9,34 +9,6 @@
 #include "status.h"
 
 
-const char* status_messages[] = {};
-
-
-void openDumpFile(Differentiator* diff)
-{
-    assert(diff);
-
-    static int dump_counter = 1; 
-
-    snprintf(diff->dump_state.directory, BUFFER_SIZE, "%s/tree_dump_%03d",
-             DUMP_DIRECTORY, dump_counter);
-
-    char command[BUFFER_SIZE * 3] = {};
-    snprintf(command, BUFFER_SIZE * 3, "rm -rf %s && mkdir -p %s",
-             diff->dump_state.directory, diff->dump_state.directory);
-    system(command);
-
-    char filename[BUFFER_SIZE * 2] = {};
-    snprintf(filename, BUFFER_SIZE * 2, "%s/tree_dump_%03d.html",
-             diff->dump_state.directory, dump_counter);
-
-    diff->dump_state.dump_file = fopen(filename, "w");
-    assert(diff->dump_state.dump_file);
-
-    dump_counter++;
-}
-
-
 static OperationStatus nodeVerify(TreeNode* node)
 {
     assert(node);
@@ -106,9 +78,9 @@ OperationStatus treeConstructor(BinaryTree* tree, const char* identifier, const 
     assert(tree); assert(identifier); assert(name); assert(file); assert(function);
 
     tree->root = NULL;
-    tree->identifier = (const char*)strdup(identifier);
-    if (tree->identifier == NULL)
-        return STATUS_SYSTEM_OUT_OF_MEMORY;
+    //tree->identifier = (const char*)strdup(identifier);
+    //if (tree->identifier == NULL)
+    //    return STATUS_SYSTEM_OUT_OF_MEMORY;
     tree->origin = (CreationInfo){name, file, function, line};
 
     return STATUS_OK;
@@ -133,9 +105,10 @@ static void deleteBranch(TreeNode* node)
 
 void treeDestructor(BinaryTree* tree)
 {
-    assert(tree); assert(tree->identifier);
+    assert(tree); 
+    //assert(tree->identifier);
 
-    free((char*)tree->identifier); 
+    //free((char*)tree->identifier); 
     if (tree->root == NULL)
         return;
     deleteBranch(tree->root);

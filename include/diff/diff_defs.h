@@ -5,7 +5,7 @@
 #include "tree/tree_defs.h"
 
 
-extern const char* DUMP_DIRECTORY;
+const size_t START_ELEMENT_COUNT = 4;
 
 
 typedef struct {
@@ -36,7 +36,13 @@ typedef struct {
 
 typedef struct {
     BinaryTree* trees;
-    char* src_code;
+    size_t capacity;
+    size_t count;
+} Forest;
+
+
+typedef struct {
+    Forest forest;
     VarTable var_table;
     CmdArgs args; 
     DumpState dump_state;

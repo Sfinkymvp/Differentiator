@@ -73,24 +73,24 @@ OperationStatus treeLoadExpression(Differentiator* diff, BinaryTree* tree,
     if (file_size == 0)
         return STATUS_IO_FILE_EMPTY;
 
-    diff->src_code = (char*)calloc(file_size + 1, 1);
-    if (diff->src_code == NULL) {
+    char* src_code = (char*)calloc(file_size + 1, 1);
+    if (src_code == NULL) {
         fclose(input_file);
         return STATUS_SYSTEM_OUT_OF_MEMORY;
     }
 
     OperationStatus status = STATUS_OK;
-    size_t read_size = fread(diff->src_code, 1, file_size, input_file);
+    size_t read_size = fread(src_code, 1, file_size, input_file);
     if (read_size != file_size) {
         status = STATUS_IO_FILE_READ_ERROR;
     }
     if (status == STATUS_OK) {
         printf("BUFFER DUMP (load expression from disk)\n");
         int position = 0;    
-        status = readNode(&tree->root, diff, tree, &position);
+        status = readNode(&tree->root, diff, src_code, &position);
     }
 
-    free(diff->src_code);
+    free(src_code);
     if (status == STATUS_OK)
         printf("Tree loaded successfully\n");
     return status;
@@ -117,26 +117,25 @@ static OpType getOpType(const char* buffer)
 
 
 OperationStatus readTitle(TreeNode* node, Differentiator* diff,
-                          BinaryTree* tree, int* position)
+                          char* src_code, int* position)
 {
     assert(node); ; assert(diff); assert(diff->var_table.variables); 
-    assert(tree); assert(diff->src_code); assert(position);
+    assert(src_code); assert(position);
 
     char buffer[BUFFER_SIZE] = {};
     int read_count = 0;
-    int result = sscanf(&diff->src_code[*position], "%s%n", buffer, &read_count);
+    int result = sscanf(&src_code[*position], "%s%n", buffer, &read_count);
     *position += read_count;
     if (result != 1)
         return STATUS_IO_FILE_READ_ERROR;
 
-    printf("after printf\n");
     OpType optype = getOpType(buffer);
     if (optype != OP_NONE) {
         node->type = NODE_OP;
         node->value.op = optype;
         return STATUS_OK;
     }
-    printf("after getOpType\n");
+
     char* endptr = NULL;
     double value = strtod(buffer, &endptr);
     assert(endptr);
@@ -151,49 +150,49 @@ OperationStatus readTitle(TreeNode* node, Differentiator* diff,
     } else {
         status = STATUS_PARSER_INVALID_IDENTIFIER;
     }
-    printf("before return\n");
+
     return status;
 }
 
 
-static inline void skipWhitespaces(Differentiator* diff, int* position)
+static inline void skipWhitespaces(char* src_code, int* position)
 {
-    assert(diff); assert(diff->src_code); assert(position);
+    assert(src_code); assert(position);
 
-    while (diff->src_code[*position] == ' '  || diff->src_code[*position] == '\t' ||
-           diff->src_code[*position] == '\n' || diff->src_code[*position] == '\r')
+    while (src_code[*position] == ' '  || src_code[*position] == '\t' ||
+           src_code[*position] == '\n' || src_code[*position] == '\r')
         (*position)++;
 }
 
 
 static OperationStatus parseNode(TreeNode** node, Differentiator* diff,
-                                 BinaryTree* tree, int* position)
+                                 char* src_code, int* position)
 {
     assert(node); ; assert(diff); assert(diff->var_table.variables); 
-    assert(diff->src_code); assert(tree); assert(position);
+    assert(src_code); assert(position);
 
     OperationStatus status = createNode(node);
     RETURN_IF_STATUS_NOT_OK(status);
     (*position)++;
 
-    skipWhitespaces(diff, position);
+    skipWhitespaces(src_code, position);
 
-    status = readTitle(*node, diff, tree, position);
+    status = readTitle(*node, diff, src_code, position);
     RETURN_IF_STATUS_NOT_OK(status);
 
-    skipWhitespaces(diff, position);
-    status = readNode(&(*node)->left, diff, tree, position);
+    skipWhitespaces(src_code, position);
+    status = readNode(&(*node)->left, diff, src_code, position);
     RETURN_IF_STATUS_NOT_OK(status);
     if ((*node)->left != NULL)
         (*node)->left->parent = *node;
 
-    skipWhitespaces(diff, position);
-    status = readNode(&(*node)->right, diff, tree, position);
+    skipWhitespaces(src_code, position);
+    status = readNode(&(*node)->right, diff, src_code, position);
     RETURN_IF_STATUS_NOT_OK(status);
     if ((*node)->right != NULL)
         (*node)->right->parent = *node;
 
-    skipWhitespaces(diff, position);
+    skipWhitespaces(src_code, position);
     (*position)++;
 
     return STATUS_OK;
@@ -201,18 +200,18 @@ static OperationStatus parseNode(TreeNode** node, Differentiator* diff,
 
 
 OperationStatus readNode(TreeNode** node, Differentiator* diff,
-                         BinaryTree* tree, int* position)
+                         char* src_code, int* position)
 {
     assert(node); ; assert(diff); assert(diff->var_table.variables); 
-    assert(diff->src_code); assert(tree); assert(position);
+    assert(src_code); assert(position);
 
-    skipWhitespaces(diff, position);
+    skipWhitespaces(src_code, position);
 
-    printf("%s\n", diff->src_code + *position);
+    printf("%s\n", src_code + *position);
 
-    if (diff->src_code[*position] == '(') {
-        return parseNode(node, diff, tree, position);
-    } else if (strncmp(&diff->src_code[*position], "nil", 3) == 0) {
+    if (src_code[*position] == '(') {
+        return parseNode(node, diff, src_code, position);
+    } else if (strncmp(&src_code[*position], "nil", 3) == 0) {
         (*position) += 3;
         *node = NULL;
         return STATUS_OK;

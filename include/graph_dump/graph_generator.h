@@ -5,7 +5,7 @@
 #include "diff/diff_defs.h"
 
 
-void generateGraph(BinaryTree* tree, const char* graph_filename);
+void generateGraph(Differentiator* diff, BinaryTree* tree, const char* graph_filename);
 
 
 #endif // GRAPH_GENERATOR_H_

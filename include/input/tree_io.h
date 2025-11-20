@@ -11,11 +11,11 @@ OperationStatus treeLoadExpression(Differentiator* diff, BinaryTree* tree,
 
 
 OperationStatus readTitle(TreeNode* node, Differentiator* diff,
-                          BinaryTree* tree, int* position);
+                          char* src_code, int* position);
 
 
 OperationStatus readNode(TreeNode** node, Differentiator* diff,
-                                BinaryTree* tree, int* position);
+                         char* src_code, int* position);
 
 
 

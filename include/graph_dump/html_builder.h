@@ -10,4 +10,7 @@ void treeDump(Differentiator* diff, BinaryTree* tree, OperationStatus status, co
               const char* function, int line, const char* format, ...);
 
 
+void openDumpFile(Differentiator* diff);
+
+
 #endif // HTML_BUILDER_H_

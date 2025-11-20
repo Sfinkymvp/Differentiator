@@ -12,7 +12,7 @@
 #include "tree/tree.h"
 
 
-const char* DUMP_DIRECTORY = "images";
+static const char* DUMP_DIRECTORY = "images";
 
 
 static void convertDotToSvg(const char* dot_file, const char* svg_file)
@@ -30,7 +30,7 @@ static void convertDotToSvg(const char* dot_file, const char* svg_file)
 
 static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info)
 {
-    assert(diff); assert(diff->trees); assert(tree); assert(tree->identifier);
+    assert(diff); assert(diff->forest.trees); assert(tree); assert(tree->identifier);
     assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
     assert(info); assert(info->message); assert(info->file); assert(info->function); 
 
@@ -92,7 +92,7 @@ void treeDump(Differentiator* diff, BinaryTree* tree, OperationStatus status, co
     snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.svg",
              diff->dump_state.directory, diff->dump_state.image_counter);
 
-    generateGraph(tree, graph_dot_file);
+    generateGraph(diff, tree, graph_dot_file);
     convertDotToSvg(graph_dot_file, graph_svg_file);
 
     char command[BUFFER_SIZE * 3] = {};
@@ -102,4 +102,29 @@ void treeDump(Differentiator* diff, BinaryTree* tree, OperationStatus status, co
     createHtmlDump(diff, tree, &info, graph_svg_file);
 
     diff->dump_state.image_counter++;
+}
+
+
+void openDumpFile(Differentiator* diff)
+{
+    assert(diff);
+
+    static int dump_counter = 1; 
+
+    snprintf(diff->dump_state.directory, BUFFER_SIZE, "%s/tree_dump_%03d",
+             DUMP_DIRECTORY, dump_counter);
+
+    char command[BUFFER_SIZE * 3] = {};
+    snprintf(command, BUFFER_SIZE * 3, "rm -rf %s && mkdir -p %s",
+             diff->dump_state.directory, diff->dump_state.directory);
+    system(command);
+
+    char filename[BUFFER_SIZE * 2] = {};
+    snprintf(filename, BUFFER_SIZE * 2, "%s/tree_dump_%03d.html",
+             diff->dump_state.directory, dump_counter);
+
+    diff->dump_state.dump_file = fopen(filename, "w");
+    assert(diff->dump_state.dump_file);
+
+    dump_counter++;
 }
