@@ -5,14 +5,6 @@
 const int BUFFER_SIZE = 256;
 
 
-typedef struct {
-    const char* name;
-    const char* file;
-    const char* function;
-    int line;
-} CreationInfo;
-
-
 typedef enum {
     NODE_OP = 0,
     NODE_VAR,
@@ -26,8 +18,42 @@ typedef enum {
     OP_MUL,
     OP_DIV,
     OP_POW,
+
+    OP_EXP,
+    OP_LOG,
+
+    OP_SIN,
+    OP_COS,
+    OP_TAN,
+    OP_COT,
+    OP_SEC,
+    OP_CSC,
+
+    OP_ASIN,
+    OP_ACOS,
+    OP_ATAN,
+    OP_ACOT,
+
+    OP_SINH,
+    OP_COSH,
+    OP_TANH,
+    OP_COTH,
+
+    OP_ASINH,
+    OP_ACOSH,
+    OP_ATANH,
+    OP_ACOTH,
+
     OP_NONE
 } OpType;
+
+
+typedef struct {
+    const char* name;
+    const char* file;
+    const char* function;
+    int line;
+} CreationInfo;
 
 
 typedef union {
@@ -50,7 +76,7 @@ struct TreeNode {
 
 typedef struct {
     TreeNode* root;
-    const char* identifier;
+    char* identifier;
     CreationInfo origin;
 } BinaryTree;
 

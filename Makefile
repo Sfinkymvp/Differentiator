@@ -22,8 +22,8 @@ OBJDIR = $(BUILDDIR)/obj
 SRCDIR = source
 
 
-FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/input/tree_io.o \
-	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o
+FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/tree/tree_io.o \
+	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o $(OBJDIR)/diff/diff_dsl.o
 DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o
 FLAGS += -Iinclude
 
@@ -56,11 +56,6 @@ $(OBJDIR)/diff/%.o: $(SRCDIR)/diff/%.cpp
 
 $(OBJDIR)/tree/%.o: $(SRCDIR)/tree/%.cpp
 	@mkdir -p $(OBJDIR)/tree
-	@g++ -c $< $(FLAGS) -o $@
-
-
-$(OBJDIR)/input/%.o: $(SRCDIR)/input/%.cpp
-	@mkdir -p $(OBJDIR)/input
 	@g++ -c $< $(FLAGS) -o $@
 
 

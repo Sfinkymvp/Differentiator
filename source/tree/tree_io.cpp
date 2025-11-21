@@ -6,50 +6,12 @@
 #include <errno.h>
 
 
-#include "input/tree_io.h"
+#include "tree/tree_io.h"
 #include "diff/diff_var_table.h"
 #include "diff/diff_defs.h"
 #include "tree/tree.h"
 #include "status.h"
 
-
-/*
-static void printTree(TreeNode* node, FILE* output_file)
-{
-    assert(node);
-    assert(output_file);
-
-    fprintf(output_file, "(");
-
-    if (node->left)
-        printTree(node->left, output_file);
-    else
-        fprintf(output_file, " nil");
-    if (node->right)
-        printTree(node->right, output_file);
-    else
-        fprintf(output_file, " nil");
-        
-    fprintf(output_file, ")");
-}
-
-
-OperationStatus treeWriteToDisk(BinaryTree* tree)
-{
-    TREE_VERIFY(tree, "Before write tree to disk");
-
-    FILE* output_file = fopen(tree->args.output_file, "w");
-    if (output_file == NULL)
-        return TREE_FILE_OPEN_ERROR;
-
-    printTree(tree->root, output_file);
-
-    if (fclose(output_file) != 0)
-        return TREE_FILE_CLOSE_ERROR;
-
-    return STATUS_OK;
-}
-*/
 
 static size_t getFileSize(FILE* input_file)
 {
@@ -64,7 +26,23 @@ static size_t getFileSize(FILE* input_file)
 }
 
 
-OperationStatus treeLoadExpression(Differentiator* diff, BinaryTree* tree,
+OperationStatus diffLoadExpression(Differentiator* diff, BinaryTree* tree)
+{
+    assert(diff); assert(diff->args.input_file); assert(tree);
+
+    FILE* input_file = fopen(diff->args.input_file, "r");
+    if (input_file == NULL)
+        return STATUS_IO_FILE_OPEN_ERROR;
+
+    OperationStatus status = treeLoadFromFile(diff, tree, input_file);
+    if (fclose(input_file) != 0 && status == STATUS_OK)
+        status = STATUS_IO_FILE_CLOSE_ERROR;
+    
+    return status;
+}
+
+
+OperationStatus treeLoadFromFile(Differentiator* diff, BinaryTree* tree,
                                    FILE* input_file)
 {
     assert(diff); assert(tree); assert(input_file);
@@ -109,8 +87,10 @@ static OpType getOpType(const char* buffer)
         return OP_MUL;
     else if (strcmp(buffer, "/") == 0)
         return OP_DIV;
-    else if (strcmp(buffer, "**") == 0)
-        return OP_POW;
+    else if (strcmp(buffer, "sin") == 0)
+        return OP_SIN;
+    else if (strcmp(buffer, "cos") == 0)
+        return OP_COS;
     
     return OP_NONE;
 }
@@ -225,6 +205,7 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
 {
     assert(diff); assert(argv);
 
+    diff->args.input_file = "../data/test1";
     for (int index = 1; index < argc; index++) {
         if (strcmp(argv[index], "-i") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {

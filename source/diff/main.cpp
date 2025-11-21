@@ -7,21 +7,26 @@
 #include "diff/diff_defs.h"
 #include "status.h"
 #include "tree/tree.h"
-#include "input/tree_io.h"
+#include "tree/tree_io.h"
 
-int main()
+int main(const int argc, const char** argv)
 {
     Differentiator diff = {};
-
-    OperationStatus status = diffConstructor(&diff);
+    OperationStatus status = diffConstructor(&diff, argc, argv);
     if (status != STATUS_OK)
         return 1;
 
-    FILE* input_file = fopen("../data/test", "r");
-    status = treeLoadExpression(&diff, &diff.forest.trees[0], input_file);
+    TREE_CREATE(&diff.forest.trees[0], "");
+    status = diffLoadExpression(&diff, &diff.forest.trees[0]);
     diff.forest.count++;
-    assert(fclose(input_file) == 0);
-   
+    TREE_DUMP(&diff, &diff.forest.trees[0], STATUS_OK, "source tree");
+
+    
+    diffCalculateValue(&diff);
+    status = diffTree(&diff, 0);
+    printf("status: %d\n", (int)status);
+    diffCalculateValue(&diff);
+
     diffDestructor(&diff);
 
     return 0;

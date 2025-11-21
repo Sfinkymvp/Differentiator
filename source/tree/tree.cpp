@@ -9,6 +9,7 @@
 #include "status.h"
 
 
+
 static OperationStatus nodeVerify(TreeNode* node)
 {
     assert(node);
@@ -78,9 +79,9 @@ OperationStatus treeConstructor(BinaryTree* tree, const char* identifier, const 
     assert(tree); assert(identifier); assert(name); assert(file); assert(function);
 
     tree->root = NULL;
-    //tree->identifier = (const char*)strdup(identifier);
-    //if (tree->identifier == NULL)
-    //    return STATUS_SYSTEM_OUT_OF_MEMORY;
+    tree->identifier = strdup(identifier);
+    if (tree->identifier == NULL)
+        return STATUS_SYSTEM_OUT_OF_MEMORY;
     tree->origin = (CreationInfo){name, file, function, line};
 
     return STATUS_OK;
@@ -105,10 +106,10 @@ static void deleteBranch(TreeNode* node)
 
 void treeDestructor(BinaryTree* tree)
 {
-    assert(tree); 
-    //assert(tree->identifier);
+    assert(tree);
 
-    //free((char*)tree->identifier); 
+    if (tree->identifier)
+        free(tree->identifier); 
     if (tree->root == NULL)
         return;
     deleteBranch(tree->root);

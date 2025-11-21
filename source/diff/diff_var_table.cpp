@@ -11,7 +11,7 @@
 
 static OperationStatus variableTableResize(Differentiator* diff)
 {
-    assert(diff); assert(diff->var_table.variables);
+    assert(diff); assert(diff->var_table.variables); assert(diff->var_table.capacity != 0);
 
     void* temp_ptr = realloc(diff->var_table.variables, diff->var_table.capacity * 2);
     if (temp_ptr == NULL)

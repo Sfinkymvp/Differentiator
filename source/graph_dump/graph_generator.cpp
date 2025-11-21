@@ -20,6 +20,8 @@ static const char* opTypeToString(OpType op)
         CONVERT_TO_STRING(OP_MUL);
         CONVERT_TO_STRING(OP_DIV);
         CONVERT_TO_STRING(OP_POW);
+        CONVERT_TO_STRING(OP_SIN);
+        CONVERT_TO_STRING(OP_COS);
         CONVERT_TO_STRING(OP_NONE);
         default: return "UNKNOWN OPERATION";
     }

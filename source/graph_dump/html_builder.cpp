@@ -30,7 +30,7 @@ static void convertDotToSvg(const char* dot_file, const char* svg_file)
 
 static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info)
 {
-    assert(diff); assert(diff->forest.trees); assert(tree); assert(tree->identifier);
+    assert(diff); assert(diff->forest.trees); assert(tree); /*assert(tree->identifier);*/
     assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
     assert(info); assert(info->message); assert(info->file); assert(info->function); 
 
