@@ -17,17 +17,14 @@ typedef enum {
     OP_SUB,
     OP_MUL,
     OP_DIV,
-    OP_POW,
 
-    OP_EXP,
+    OP_POW,
     OP_LOG,
 
     OP_SIN,
     OP_COS,
     OP_TAN,
     OP_COT,
-    OP_SEC,
-    OP_CSC,
 
     OP_ASIN,
     OP_ACOS,
@@ -46,6 +43,16 @@ typedef enum {
 
     OP_NONE
 } OpType;
+
+
+typedef struct {
+    OpType op;
+    const char* name;
+    const char* symbol;
+} OpInfo;
+
+
+extern const OpInfo OP_TABLE[];
 
 
 typedef struct {

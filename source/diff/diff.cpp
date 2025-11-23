@@ -5,13 +5,18 @@
 
 
 #include "diff/diff.h"
-#include "diff/diff_dsl.h"
-#include "diff/diff_var_table.h"
+#include "diff/diff_process.h"
+#include "diff/diff_optimize.h"
+
+#include "status.h"
+
 #include "graph_dump/html_builder.h"
-#include "diff/diff_defs.h"
+
+#include "tex_dump/tex.h"
+
 #include "tree/tree.h"
 #include "tree/tree_io.h"
-#include "status.h"
+
 
 
 static OperationStatus diffForestResize(Differentiator* diff)
@@ -29,9 +34,9 @@ static OperationStatus diffForestResize(Differentiator* diff)
 }
 
 
-OperationStatus diffTree(Differentiator* diff, size_t diff_var)
+OperationStatus diffNextDerivative(Differentiator* diff, size_t var_idx)
 {
-    assert(diff);
+    assert(diff); assert(diff->forest.trees); assert(var_idx < diff->var_table.count);
 
     if (diff->forest.count == diff->forest.capacity)
         diffForestResize(diff);
@@ -39,13 +44,62 @@ OperationStatus diffTree(Differentiator* diff, size_t diff_var)
 
     TREE_CREATE(&diff->forest.trees[diff->forest.count], "create diff tree");
     diff->forest.trees[diff->forest.count].root = diffNode(
-        diff->forest.trees[diff->forest.count - 1].root, diff_var);
+        diff->forest.trees[diff->forest.count - 1].root, var_idx);
+    if (!diff->forest.trees[diff->forest.count].root)
+        return STATUS_DIFF_CALCULATE_ERROR;
     diff->forest.count++;
-    assert(diff->forest.trees[diff->forest.count- 1].root);
-    TREE_VERIFY(diff, &diff->forest.trees[diff->forest.count - 1], "diff tree");
+    TREE_VERIFY(diff, diff->forest.count - 1, "diff tree");
 
-    diff->forest.count++;
     return STATUS_OK;
+}
+
+
+double diffOp(Differentiator* diff, const TreeNode* node)
+{
+    assert(diff);
+
+    double l_res  = diffEvaluate(diff, node->left);
+    double r_res = diffEvaluate(diff, node->right);
+
+    switch (node->value.op) {
+        case OP_ADD:   return l_res + r_res;
+        case OP_SUB:   return l_res - r_res;
+        case OP_MUL:   return l_res * r_res;
+        case OP_DIV: 
+            if (fabs(r_res) < 0.000001) {
+                printf("Division by zero\n");
+                return NAN;
+            }
+            return l_res / r_res;
+        
+        case OP_POW:   return pow(l_res, r_res);
+        case OP_LOG:   return log(l_res) / log(r_res);
+
+        case OP_SIN:   return sin(r_res);
+        case OP_COS:   return cos(r_res);
+        case OP_TAN:   return tan(r_res);
+        case OP_COT:   return 1 / tan(r_res);
+
+        case OP_ASIN:  return asin(r_res);
+        case OP_ACOS:  return acos(r_res);
+        case OP_ATAN:  return atan(r_res);
+        case OP_ACOT:  return atan(1 / r_res);
+
+        case OP_SINH:  return sinh(r_res);
+        case OP_COSH:  return cosh(r_res);
+        case OP_TANH:  return tanh(r_res);
+        case OP_COTH:  return 1 / tanh(r_res);
+        
+        case OP_ASINH: return asinh(r_res);
+        case OP_ACOSH: return acosh(r_res);
+        case OP_ATANH: return atanh(r_res);
+        case OP_ACOTH: return atanh(1 / r_res);
+
+        case OP_NONE:  return 0;
+        default:
+            printf("Unknown operation for evaluation\n");
+            return 0;
+    }
 }
 
 
@@ -64,44 +118,29 @@ double diffEvaluate(Differentiator* diff, const TreeNode* node)
     }
 }
 
-
-double diffOp(Differentiator* diff, const TreeNode* node)
+void diffCalculateValue(Differentiator* diff, size_t tree_idx)
 {
-    assert(diff);
+    assert(diff); assert(tree_idx < diff->forest.count);
+    assert(diff->forest.trees[tree_idx].root);
 
-    double left_res  = diffEvaluate(diff, node->left);
-    double right_res = diffEvaluate(diff, node->right);
-
-    switch (node->value.op) {
-        case OP_ADD: return left_res + right_res;
-        case OP_SUB: return left_res - right_res;
-        case OP_MUL: return left_res * right_res;
-        case OP_DIV: 
-            if (fabs(right_res) < 0.000001) {
-                printf("Division by zero\n");
-                return NAN;
-            }
-            return left_res / right_res;
-        case OP_SIN: return sin(right_res);
-        case OP_COS: return cos(right_res);
-        default:
-            printf("Unknown operation for evaluation\n");
-            return 0;
-    }
+    double value = diffEvaluate(diff, diff->forest.trees[diff->forest.count - 1].root);
+    printf("Expression value: %g\n", value);
 }
 
 
-void diffCalculateValue(Differentiator* diff)
+OperationStatus defineVariables(Differentiator* diff)
 {
-    assert(diff);
+    assert(diff); assert(diff->var_table.variables);
 
     for (size_t index = 0; index < diff->var_table.count; index++) {
         printf("What is value of variable '%s'?", diff->var_table.variables[index].name);
-        if (scanf("%lf", &diff->var_table.variables[index].value) != 1)
-            return;
+        if (scanf("%lf", &diff->var_table.variables[index].value) != 1) {
+            fprintf(stderr, "Error: variable %s not defined\n", diff->var_table.variables[index].name);
+            return STATUS_IO_INVALID_USER_INPUT;
+        }
     }
-    double value = diffEvaluate(diff, diff->forest.trees[diff->forest.count - 1].root);
-    printf("Expression value: %lf\n", value);
+
+    return STATUS_OK;
 }
 
 
@@ -128,7 +167,9 @@ OperationStatus diffConstructor(Differentiator* diff, const int argc, const char
         return STATUS_SYSTEM_OUT_OF_MEMORY;
     }
 
-    openDumpFile(diff);
+    openGraphDumpFile(diff);
+    texInit(diff);
+
     return STATUS_OK;
 }
 
@@ -147,6 +188,9 @@ void diffDestructor(Differentiator* diff)
     free(diff->var_table.variables);
     diff->var_table.variables = NULL;
 
-    assert(fclose(diff->dump_state.dump_file) == 0);
-    diff->dump_state.dump_file = NULL;
+    assert(fclose(diff->graph_dump.file) == 0);
+
+    texClose(diff);
+
+    diff->graph_dump.file = NULL;
 }

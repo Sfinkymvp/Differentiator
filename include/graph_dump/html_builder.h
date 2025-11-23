@@ -6,11 +6,11 @@
 #include "status.h"
 
 
-void treeDump(Differentiator* diff, BinaryTree* tree, OperationStatus status, const char* file, 
+void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, const char* file, 
               const char* function, int line, const char* format, ...);
 
 
-void openDumpFile(Differentiator* diff);
+void openGraphDumpFile(Differentiator* diff);
 
 
 #endif // HTML_BUILDER_H_

@@ -10,6 +10,8 @@ typedef enum {
     STATUS_TREE_MISSING_PARENT,
     STATUS_TREE_PARENT_CHILD_MISMATCH,
     STATUS_TREE_INVALID_BRANCH_STRUCTURE,
+// Ошибки дифференциатора
+    STATUS_DIFF_CALCULATE_ERROR,
 // Ошибки системного характера
     STATUS_SYSTEM_OUT_OF_MEMORY,
 // Ошибки аргументов командной строки
@@ -17,6 +19,7 @@ typedef enum {
 // Ошибки связанные с синтаксисом
     STATUS_PARSER_INVALID_IDENTIFIER,
 // Ошибки ввода/вывода
+    STATUS_IO_INVALID_USER_INPUT,
     STATUS_IO_FILE_OPEN_ERROR,
     STATUS_IO_FILE_EMPTY,
     STATUS_IO_FILE_READ_ERROR,

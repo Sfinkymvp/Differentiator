@@ -9,10 +9,16 @@ const size_t START_ELEMENT_COUNT = 4;
 
 
 typedef struct {
-    FILE* dump_file;
+    FILE* file;
     char directory[BUFFER_SIZE];
     int image_counter;
-} DumpState;
+} GraphDumpState;
+
+
+typedef struct {
+    FILE* file;
+    char filename[BUFFER_SIZE];
+} TexDumpState;
 
 
 typedef struct {
@@ -31,6 +37,8 @@ typedef struct {
 typedef struct {
     const char* input_file;
     const char* output_file;
+    bool simple_graph;
+    size_t derivative_order;
 } CmdArgs;
 
 
@@ -45,7 +53,8 @@ typedef struct {
     Forest forest;
     VarTable var_table;
     CmdArgs args; 
-    DumpState dump_state;
+    GraphDumpState graph_dump;
+    TexDumpState tex_dump;
 } Differentiator;
 
 

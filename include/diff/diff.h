@@ -6,16 +6,19 @@
 #include "status.h"
 
 
-OperationStatus diffTree(Differentiator* diff, size_t diff_var);
-
-
-double diffEvaluate(Differentiator* diff, const TreeNode* node);
+OperationStatus diffNextDerivative(Differentiator* diff, size_t var_idx);
 
 
 double diffOp(Differentiator* diff, const TreeNode* node);
 
 
-void diffCalculateValue(Differentiator* diff);
+double diffEvaluate(Differentiator* diff, const TreeNode* node);
+
+
+void diffCalculateValue(Differentiator* diff, size_t tree_idx);
+
+
+OperationStatus defineVariables(Differentiator* diff);
 
 
 OperationStatus diffConstructor(Differentiator* diff, const int argc, const char** argv);

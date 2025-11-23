@@ -26,18 +26,22 @@ static size_t getFileSize(FILE* input_file)
 }
 
 
-OperationStatus diffLoadExpression(Differentiator* diff, BinaryTree* tree)
+OperationStatus diffLoadExpression(Differentiator* diff)
 {
-    assert(diff); assert(diff->args.input_file); assert(tree);
+    assert(diff); assert(diff->forest.trees); assert(diff->args.input_file);
+
+    OperationStatus status = TREE_CREATE(&diff->forest.trees[0], "");
+    RETURN_IF_STATUS_NOT_OK(status);
 
     FILE* input_file = fopen(diff->args.input_file, "r");
     if (input_file == NULL)
         return STATUS_IO_FILE_OPEN_ERROR;
 
-    OperationStatus status = treeLoadFromFile(diff, tree, input_file);
+    status = treeLoadFromFile(diff, &diff->forest.trees[0], input_file);
     if (fclose(input_file) != 0 && status == STATUS_OK)
         status = STATUS_IO_FILE_CLOSE_ERROR;
-    
+
+    diff->forest.count++;    
     return status;
 }
 
@@ -79,19 +83,11 @@ static OpType getOpType(const char* buffer)
 {
     assert(buffer);
 
-    if (strcmp(buffer, "+") == 0)
-        return OP_ADD;
-    else if (strcmp(buffer,"-") == 0)
-        return OP_SUB;
-    else if (strcmp(buffer, "*") == 0)
-        return OP_MUL;
-    else if (strcmp(buffer, "/") == 0)
-        return OP_DIV;
-    else if (strcmp(buffer, "sin") == 0)
-        return OP_SIN;
-    else if (strcmp(buffer, "cos") == 0)
-        return OP_COS;
-    
+    for (int index = 0; OP_TABLE[index].op != OP_NONE; index++) {
+        if (strcmp(buffer, OP_TABLE[index].symbol) == 0)
+            return OP_TABLE[index].op;
+    }
+
     return OP_NONE;
 }
 
@@ -206,6 +202,10 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
     assert(diff); assert(argv);
 
     diff->args.input_file = "../data/test1";
+    diff->args.output_file = NULL;
+    diff->args.simple_graph = false;
+    diff->args.derivative_order = 1;
+
     for (int index = 1; index < argc; index++) {
         if (strcmp(argv[index], "-i") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
@@ -222,6 +222,18 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
             } else {
                 return STATUS_CLI_UNKNOWN_OPTION;
             }
+        } else if (strcmp(argv[index], "-s")) {
+            diff->args.simple_graph = true;
+        } else if (strcmp(argv[index], "-n")) {
+            if (index + 1 < argc && argv[index + 1][0] != '-') {
+                char* end = NULL;
+                diff->args.derivative_order = strtoull(argv[index + 1], &end, 10);
+                if (*end != '\0')
+                    return STATUS_CLI_UNKNOWN_OPTION;
+                else
+                    index++;
+            } else
+                return STATUS_CLI_UNKNOWN_OPTION;
         } else {
             return STATUS_CLI_UNKNOWN_OPTION;
         }

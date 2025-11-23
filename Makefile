@@ -23,8 +23,10 @@ SRCDIR = source
 
 
 FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/tree/tree_io.o \
-	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o $(OBJDIR)/diff/diff_dsl.o
-DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o
+	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o $(OBJDIR)/diff/diff_process.o \
+	$(OBJDIR)/diff/diff_optimize.o
+DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o \
+	$(OBJDIR)/tex_dump/tex.o
 FLAGS += -Iinclude
 
 OUTPUT_NAME = diffuzor
@@ -61,4 +63,8 @@ $(OBJDIR)/tree/%.o: $(SRCDIR)/tree/%.cpp
 
 $(OBJDIR)/graph_dump/%.o: $(SRCDIR)/graph_dump/%.cpp
 	@mkdir -p $(OBJDIR)/graph_dump
+	@g++ -c $< $(FLAGS) -o $@
+
+$(OBJDIR)/tex_dump/%.o: $(SRCDIR)/tex_dump/%.cpp
+	@mkdir -p $(OBJDIR)/tex_dump
 	@g++ -c $< $(FLAGS) -o $@

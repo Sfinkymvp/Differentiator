@@ -6,7 +6,7 @@
 #include "status.h"
 
 
-OperationStatus diffLoadExpression(Differentiator* diff, BinaryTree* tree);
+OperationStatus diffLoadExpression(Differentiator* diff);
 
 
 OperationStatus treeLoadFromFile(Differentiator* diff, BinaryTree* tree,
