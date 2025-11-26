@@ -207,6 +207,7 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
     diff->args.derivative_order = 1;
 
     for (int index = 1; index < argc; index++) {
+        printf("%s\n", argv[index]);
         if (strcmp(argv[index], "-i") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 diff->args.input_file = argv[index + 1];
@@ -222,16 +223,16 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
             } else {
                 return STATUS_CLI_UNKNOWN_OPTION;
             }
-        } else if (strcmp(argv[index], "-s")) {
+        } else if (strcmp(argv[index], "-s") == 0) {
             diff->args.simple_graph = true;
-        } else if (strcmp(argv[index], "-n")) {
+        } else if (strcmp(argv[index], "-n") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 char* end = NULL;
                 diff->args.derivative_order = strtoull(argv[index + 1], &end, 10);
                 if (*end != '\0')
                     return STATUS_CLI_UNKNOWN_OPTION;
-                else
-                    index++;
+                
+                index++;
             } else
                 return STATUS_CLI_UNKNOWN_OPTION;
         } else {

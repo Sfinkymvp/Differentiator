@@ -23,7 +23,7 @@ static OperationStatus diffForestResize(Differentiator* diff)
 {
     assert(diff); assert(diff->forest.trees); assert(diff->forest.capacity != 0);
 
-    void* temp_ptr = realloc(diff->forest.trees, diff->forest.capacity * 2);
+    void* temp_ptr = realloc(diff->forest.trees, 2 * diff->forest.capacity * sizeof(BinaryTree));
     if (temp_ptr == NULL)
         return STATUS_SYSTEM_OUT_OF_MEMORY;
 
@@ -34,7 +34,7 @@ static OperationStatus diffForestResize(Differentiator* diff)
 }
 
 
-OperationStatus diffNextDerivative(Differentiator* diff, size_t var_idx)
+OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
 {
     assert(diff); assert(diff->forest.trees); assert(var_idx < diff->var_table.count);
 
@@ -42,12 +42,17 @@ OperationStatus diffNextDerivative(Differentiator* diff, size_t var_idx)
         diffForestResize(diff);
     assert(diff->forest.count < diff->forest.capacity);
 
+    fprintf(diff->tex_dump.file, "Начинаем вычислять %zu производную функции\n", diff->forest.count);
+
     TREE_CREATE(&diff->forest.trees[diff->forest.count], "create diff tree");
-    diff->forest.trees[diff->forest.count].root = diffNode(
+    diff->forest.trees[diff->forest.count].root = diffNode(diff,
         diff->forest.trees[diff->forest.count - 1].root, var_idx);
     if (!diff->forest.trees[diff->forest.count].root)
         return STATUS_DIFF_CALCULATE_ERROR;
+
+    printExpression(diff, diff->forest.count);
     diff->forest.count++;
+
     TREE_VERIFY(diff, diff->forest.count - 1, "diff tree");
 
     return STATUS_OK;
@@ -73,7 +78,7 @@ double diffOp(Differentiator* diff, const TreeNode* node)
             return l_res / r_res;
         
         case OP_POW:   return pow(l_res, r_res);
-        case OP_LOG:   return log(l_res) / log(r_res);
+        case OP_LOG:   return log(r_res) / log(l_res);
 
         case OP_SIN:   return sin(r_res);
         case OP_COS:   return cos(r_res);

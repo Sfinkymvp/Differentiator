@@ -9,6 +9,10 @@
 
 #include "tree/tree.h"
 
+#include "tex_dump/tex.h"
+
+#include "graph_dump/html_builder.h"
+
 
 static const double EPS = 1e-7;
 
@@ -18,18 +22,32 @@ static const double EPS = 1e-7;
 #define NL node->left
 #define NR node->right
 
+typedef enum {
+    FOLD_NOT_CONST = 0,
+    FOLD_CONST,
+    FOLD_OPTIMIZED
+} FoldStatus;
 
-bool foldConstants(Differentiator* diff, TreeNode* node)
+
+static FoldStatus foldConstants(Differentiator* diff, TreeNode* node, size_t tree_idx)
 {
     assert(diff);
     
     if (!node)
-        return true;
+        return FOLD_CONST;
 
     switch (node->type) {
         case NODE_OP: {
-            if (foldConstants(diff, NL) &&
-                foldConstants(diff, NR)) {
+            FoldStatus left_res = foldConstants(diff, NL, tree_idx);
+            FoldStatus right_res = foldConstants(diff, NR, tree_idx);
+
+            if ((left_res == FOLD_OPTIMIZED || left_res == FOLD_CONST) &&
+                (right_res == FOLD_OPTIMIZED || right_res == FOLD_CONST)) {
+
+                fprintf(diff->tex_dump.file, "\\text{Optimization:}\n");
+                fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+                printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+                fprintf(diff->tex_dump.file, " = ");
 
                 double value = diffOp(diff, node);
                 deleteBranch(NL);
@@ -39,14 +57,17 @@ bool foldConstants(Differentiator* diff, TreeNode* node)
                 node->type = NODE_NUM;
                 node->value.num_val = value;
 
-                return true;
+                printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+                fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
+
+                return FOLD_OPTIMIZED;
             } else {
-                return false;
+                return FOLD_NOT_CONST;
             }
         }
-        case NODE_VAR: return false;
-        case NODE_NUM: return true;
-        default:       return false; 
+        case NODE_VAR: return FOLD_NOT_CONST;
+        case NODE_NUM: return FOLD_CONST;
+        default:       return FOLD_NOT_CONST;
     }
 }
 
@@ -74,138 +95,132 @@ static void replaceWithChild(TreeNode* parent, TreeNode* child)
 }
 
 
-static bool simplifyAdd(TreeNode* node) 
+static bool setNodeToChild(Differentiator* diff, TreeNode* node, size_t tree_idx, bool is_left)
 {
-    assert(node);
+    assert(diff); assert(node);
 
-    if (ZERO(NL)) {
+    fprintf(diff->tex_dump.file, "\\text{Optimization:}\n");
+    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+    printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+    fprintf(diff->tex_dump.file, " = ");
+
+    if (is_left) {
+        deleteBranch(NR);
+        NR = NULL;
+        replaceWithChild(node, NL);
+    } else {
         deleteBranch(NL);
         NL = NULL;
         replaceWithChild(node, NR);
-    } else if (ZERO(NR)) {
-        deleteBranch(NR);
-        NR = NULL;
-        replaceWithChild(node, NL);
-    } else {
-        return false;
     }
+    
+    printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+    fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
 
     return true;
 }
 
 
-static bool simplifySub(TreeNode* node)
+static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, double num)
 {
-    assert(node);
+    assert(diff); assert(node);
 
-    if (ZERO(NR)) {
-        deleteBranch(NR);
-        NR = NULL;
-        replaceWithChild(node, NL);
-    } else {
-        return false;
-    }
+    fprintf(diff->tex_dump.file, "\\text{Optimization:}\n");
+    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+    printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+    fprintf(diff->tex_dump.file, " = ");
+
+    deleteBranch(NL);
+    NL = NULL;
+    deleteBranch(NR);
+    NR = NULL;
+    node->type = NODE_NUM;
+    node->value.num_val = num;
+
+    printPaintedTree(diff, diff->forest.trees[tree_idx].root, node);
+    fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
 
     return true;
 }
 
 
-static bool simplifyMul(TreeNode* node)
+static bool simplifyAdd(Differentiator* diff, TreeNode* node, size_t tree_idx)
 {
-    assert(node);
+    assert(diff); assert(node);
 
-    if (ZERO(NL) || ZERO(NR)) {
-        deleteBranch(NL);
-        NL = NULL;
-        deleteBranch(NR);
-        NR = NULL;
-        node->type = NODE_NUM;
-        node->value.num_val = 0;
-    } else if (ONE(NL)) {
-        deleteBranch(NL);
-        NL = NULL;
-        replaceWithChild(node, NR);
-    } else if (ONE(NR)) {
-        deleteBranch(NR);
-        NR = NULL;
-        replaceWithChild(node, NL);
-    } else {
-        return false;
-    }
+    if (ZERO(NL)) return setNodeToChild(diff, node, tree_idx, false);
+    if (ZERO(NR)) return setNodeToChild(diff, node, tree_idx, true);
 
-    return true;
+    return false;
 }
 
 
-static bool simplifyDiv(TreeNode* node)
+static bool simplifySub(Differentiator* diff, TreeNode* node, size_t tree_idx)
 {
-    assert(node);
+    assert(diff); assert(node);
 
-    if (ZERO(NL)) {
-        deleteBranch(NL);
-        NL = NULL;
-        deleteBranch(NR);
-        NR = NULL;
+    if (ZERO(NR)) return setNodeToChild(diff, node, tree_idx, true);
 
-        node->type = NODE_NUM;
-        node->value.num_val = 0;
-    } else if (ONE(NR)) {
-        deleteBranch(NR);
-        NR = NULL;
-        replaceWithChild(node, NL);
-    } else {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 
-static bool simplifyPow(TreeNode* node)
+static bool simplifyMul(Differentiator* diff, TreeNode* node, size_t tree_idx)
 {
-    assert(node);
+    assert(diff); assert(node);
 
-    if (ZERO(NL) || ONE(NL) || ZERO(NR)) {
-        deleteBranch(NL);
-        NL = NULL;
-        deleteBranch(NR);
-        NR = NULL;
-        node->type = NODE_NUM;
-        if (ZERO(NL))            node->value.num_val = 0;
-        if (ONE(NL) || ZERO(NR)) node->value.num_val = 1;
-    } else if (ONE(NR)) {
-        deleteBranch(NR);
-        NR = NULL;
-        replaceWithChild(node, NL);
-    } else  {
-        return false;
-    }
+    if (ZERO(NL) || ZERO(NR)) return setNodeToNum(diff, node, tree_idx, 0);
+    if (ONE(NL))              return setNodeToChild(diff, node, tree_idx, false);
+    if (ONE(NR))              return setNodeToChild(diff, node, tree_idx, true);
 
-    return true;
+    return false;
 }
 
 
-bool simplifyOperations(Differentiator* diff, TreeNode* node)
+static bool simplifyDiv(Differentiator* diff, TreeNode* node, size_t tree_idx)
+{
+    assert(diff); assert(node);
+
+    if (ZERO(NL)) return setNodeToNum(diff, node, tree_idx, 0);
+    if (ONE(NR))  return setNodeToChild(diff, node, tree_idx, true);
+
+    return false;
+}
+
+
+static bool simplifyPow(Differentiator* diff, TreeNode* node, size_t tree_idx)
+{
+    assert(diff); assert(node);
+
+    if (ZERO(NL))            return setNodeToNum(diff, node, tree_idx, 0);
+    if (ONE(NL) || ZERO(NR)) return setNodeToNum(diff, node, tree_idx, 1);
+    if (ONE(NR))             return setNodeToChild(diff, node, tree_idx, true);
+
+    return false;
+}
+
+
+static bool simplifyOperations(Differentiator* diff, TreeNode* node, size_t tree_idx)
 {
     assert(diff);
     
     if (!node) return false;
 
     bool changed = false;
-    if (simplifyOperations(diff, node->left)) changed = true;
-    if (simplifyOperations(diff, node->right)) changed = true;
+    if (simplifyOperations(diff, node->left, tree_idx)) changed = true;
+    if (simplifyOperations(diff, node->right, tree_idx)) changed = true;
    
     if (node->type != NODE_OP)
         return changed;
 
     bool curr_changed = false;
     switch (node->value.op) {
-        case OP_ADD: curr_changed = simplifyAdd(node); break;
-        case OP_SUB: curr_changed = simplifySub(node); break;
-        case OP_MUL: curr_changed = simplifyMul(node); break;
-        case OP_DIV: curr_changed = simplifyDiv(node); break;
+        case OP_ADD: curr_changed = simplifyAdd(diff, node, tree_idx); break;
+        case OP_SUB: curr_changed = simplifySub(diff, node, tree_idx); break;
+        case OP_MUL: curr_changed = simplifyMul(diff, node, tree_idx); break;
+        case OP_DIV: curr_changed = simplifyDiv(diff, node, tree_idx); break;
 
-        case OP_POW: curr_changed = simplifyPow(node); break;
+        case OP_POW: curr_changed = simplifyPow(diff, node, tree_idx); break;
         case OP_LOG:
         
         case OP_SIN:
@@ -242,9 +257,10 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
 
     bool changed = true;
     while (changed) {
-        bool simplified = simplifyOperations(diff, diff->forest.trees[tree_idx].root);
-        bool folded = foldConstants(diff, diff->forest.trees[tree_idx].root);
-        changed = simplified || folded;
+        FoldStatus status = foldConstants(diff, diff->forest.trees[tree_idx].root, tree_idx);
+        bool simplified = simplifyOperations(diff, diff->forest.trees[tree_idx].root, tree_idx);
+        changed = simplified || status == FOLD_CONST;
     }  
-}
 
+    TREE_DUMP(diff, tree_idx, STATUS_OK, "source tree");
+}

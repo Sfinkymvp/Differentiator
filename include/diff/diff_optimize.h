@@ -5,12 +5,6 @@
 #include "diff/diff_defs.h"
 
 
-bool foldConstants(Differentiator* diff, TreeNode* node);
-
-
-bool simplifyOperations(Differentiator* diff, TreeNode* node);
-
-
 void optimizeTree(Differentiator* diff, size_t tree_idx);
 
 

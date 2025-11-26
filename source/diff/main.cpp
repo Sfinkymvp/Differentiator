@@ -23,17 +23,23 @@ int main(const int argc, const char** argv)
         return 1;
 
     status = diffLoadExpression(&diff);
+    if (status == STATUS_OK)
+        printIntroduction(&diff);
+
     TREE_DUMP(&diff, 0, STATUS_OK, "source tree");
     if (status == STATUS_OK)
         status = defineVariables(&diff);
     if (status == STATUS_OK) {
-        for (size_t index = 0; index < diff.args.derivative_order; index++) {
-            status = diffNextDerivative(&diff, index);
-            if (status != STATUS_OK)
+        for (size_t index = 1; index <= diff.args.derivative_order; index++) {
+            status = diffCalculateDerivative(&diff, 0);
+            if (status != STATUS_OK) {
+                printf("status: %d\n", status);
+                printf("lox\n");
                 break;
+            }
             printf("INDEX: %zu, VALUE:\n", index);
             diffCalculateValue(&diff, index);
-            optimizeTree(&diff, index + 1);
+            optimizeTree(&diff, index);
             printf("INDEX: %zu, VALUE:\n", index);
             diffCalculateValue(&diff, index);
         }

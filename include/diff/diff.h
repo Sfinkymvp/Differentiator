@@ -6,7 +6,7 @@
 #include "status.h"
 
 
-OperationStatus diffNextDerivative(Differentiator* diff, size_t var_idx);
+OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx);
 
 
 double diffOp(Differentiator* diff, const TreeNode* node);

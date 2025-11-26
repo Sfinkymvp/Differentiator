@@ -72,7 +72,7 @@ static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* inf
 void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, const char* file, 
               const char* function, int line, const char* format, ...)
 {
-    assert(diff); assert(diff->graph_dump.file); assert(tree_idx < diff->forest.count);
+    assert(diff); assert(diff->graph_dump.file); 
     assert(file); assert(function); assert(format);
 
     char message[BUFFER_SIZE] = {};
@@ -92,12 +92,12 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
     snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.svg",
              diff->graph_dump.directory, diff->graph_dump.image_counter);
 
-    generateGraph(diff, &diff->forest.trees[tree_idx], graph_dot_file);
+    generateGraph(diff, tree_idx, graph_dot_file);
     convertDotToSvg(graph_dot_file, graph_svg_file);
 
     char command[BUFFER_SIZE * 3] = {};
     snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
-    //system(command);
+    system(command);
 
     createHtmlDump(diff, &diff->forest.trees[tree_idx], &info, graph_svg_file);
 

@@ -5,7 +5,10 @@
 
 
 #include "tex_dump/tex.h"
+
 #include "diff/diff_defs.h"
+#include "diff/diff_process.h"
+
 #include "tree/tree.h"
 
 
@@ -16,7 +19,7 @@ void printOperator(Differentiator* diff, TreeNode* node)
 {
     assert(diff); assert(diff->tex_dump.file); assert(node);
     assert(node->type == NODE_OP); assert(node->value.op != OP_NONE);
-    assert(node->left); assert(node->right);
+    assert(node->right);
 
     switch (node->value.op) {
         case OP_ADD:
@@ -45,8 +48,9 @@ void printOperator(Differentiator* diff, TreeNode* node)
             break;
         
         case OP_POW:
+            fprintf(diff->tex_dump.file, "\\left( ");
             printNode(diff, node->left);
-            fprintf(diff->tex_dump.file, "^{");
+            fprintf(diff->tex_dump.file, "\\right) ^{");
             printNode(diff, node->right);
             fprintf(diff->tex_dump.file, "} ");
             break;
@@ -174,14 +178,61 @@ void printNode(Differentiator* diff, TreeNode* node)
 }
 
 
-void printExpression(Differentiator* diff, TreeNode* node)
+void printPaintedTree(Differentiator* diff, TreeNode* node, TreeNode* color_node)
+{
+    assert(diff); assert(diff->tex_dump.file); assert(diff->var_table.variables);
+    assert(node); assert(color_node);
+
+//    if (node == color_node)
+        fprintf(diff->tex_dump.file, "{\\color{red} ");
+
+    printf("node: %p, color_node: %p\n", node, color_node);
+    switch (node->type) {
+        case NODE_OP:
+            printOperator(diff, node);
+            break;
+        case NODE_VAR:
+            fprintf(diff->tex_dump.file, "%s", diff->var_table.variables[node->value.var_idx].name);
+            break;
+        case NODE_NUM:
+            fprintf(diff->tex_dump.file, "%g", node->value.num_val);
+            break;
+        default:
+            fprintf(stderr, "Critical error: unknown node type %d\n", node->type);
+            break;
+    }
+
+ //   if (node == color_node) 
+        fprintf(diff->tex_dump.file, "} ");
+}
+
+
+void printExpression(Differentiator* diff, size_t tree_idx)
 {
     assert(diff); assert(diff->tex_dump.file); assert(diff->forest.trees);
-    assert(node);
+    assert(tree_idx <= diff->forest.count);
 
-    fprintf(diff->tex_dump.file, "\\begin{align}\n\t");
+    fprintf(diff->tex_dump.file, "\\begin{align}\n");
+    printNode(diff, diff->forest.trees[tree_idx].root);
+    fprintf(diff->tex_dump.file, "\n\\end{align}\n\n");
+}
+
+
+TreeNode* printAndDifferentiate(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(diff->forest.trees); assert(diff->tex_dump.file); assert(node); 
+
+    fprintf(diff->tex_dump.file, "\\text{Differentiation:}\n");
+    fprintf(diff->tex_dump.file, "\\begin{align}\n");
+    fprintf(diff->tex_dump.file, "\\left( ");
     printNode(diff, node);
-    fprintf(diff->tex_dump.file, "\\end{align}\n");
+    fprintf(diff->tex_dump.file, " \\right)' = ");
+
+    TreeNode* new_node = diffOp(diff, node, var_idx);
+    printNode(diff, new_node);
+
+    fprintf(diff->tex_dump.file, "\\end{align}\n\n");
+    return new_node;
 }
 
 
@@ -202,11 +253,19 @@ void texInit(Differentiator* diff)
     assert(diff);
 
     openTexDumpFile(diff);
-
     assert(diff->tex_dump.file);
-    fprintf(diff->tex_dump.file, "\\documentclass[14pt,a4paper]{extreport}\n");
-    fprintf(diff->tex_dump.file, "\\input{%s/style}\n", TEX_DUMP_DIRECTORY);
-    fprintf(diff->tex_dump.file, "\\begin{document}\n");
+
+    fprintf(diff->tex_dump.file,
+        "\\documentclass[14pt,a4paper]{extreport}\n"
+        "\\input{%s/style}\n", TEX_DUMP_DIRECTORY);
+
+    printTitle(diff);
+
+    fprintf(diff->tex_dump.file,
+        "\\begin{document}\n"
+        "\\maketitle\n"
+        "\\tableofcontents\n"
+        "\\newpage\n\n");
 }
 
 
@@ -222,4 +281,32 @@ void texClose(Differentiator* diff)
     char command[BUFFER_SIZE * 2] = {};
     snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s", diff->tex_dump.filename);
     system(command);
+}
+
+
+void printTitle(Differentiator* diff)
+{
+    assert(diff); assert(diff->tex_dump.file);
+
+    fprintf(diff->tex_dump.file,
+        "\\title{Дифференцирование n раз дифференцируемой "
+        "в точке пересечения матана и алгема сложной непрерывной функции}\n"
+        "\\author{Сгенерировано программой студента Московского Физико-Технического Университета}\n"
+        "\\date{Документ сгенерирован: \\today}\n");
+}
+
+
+void printIntroduction(Differentiator* diff)
+{
+    assert(diff); assert(diff->tex_dump.file); assert(diff->forest.count != 0);
+
+    fprintf(diff->tex_dump.file,
+        "\\chapter{Введение}\n"
+        "В этой дипломной работе студентом честно предоставлено вручную \n"
+        "написанное исследование функции. Далее вы можете увидеть исходную функцию:\n");
+    
+    printExpression(diff, 0);
+
+    fprintf(diff->tex_dump.file,
+        "\\chapter{Ход вычислений}\n");
 }

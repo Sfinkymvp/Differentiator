@@ -6,18 +6,22 @@
 #include "diff/diff_process.h"
 #include "diff/diff_defs.h"
 #include "diff/diff.h"
+
+#include "tex_dump/tex.h"
     
 
-#define dL diffNode(left, var_idx)
-#define dR diffNode(right, var_idx)
+#define FILE diff->tex_dump.file
+
+#define dL diffNode(diff, left, var_idx)
+#define dR diffNode(diff, right, var_idx)
 #define cL copyNode(left)
 #define cR copyNode(right)
 
 #define NL node->left
 #define NR node->right
 
-#define dNL diffNode(NL, var_idx)
-#define dNR diffNode(NR, var_idx)
+#define dNL diffNode(diff, NL, var_idx)
+#define dNR diffNode(diff, NR, var_idx)
 #define cNL copyNode(NL)
 #define cNR copyNode(NR)
 
@@ -50,6 +54,17 @@
 #define ACOSH(R) createOp(OP_ACOSH, NULL, R)
 #define ATANH(R) createOp(OP_ATANH, NULL, R)
 #define ACOTH(R) createOp(OP_ACOTH, NULL, R)
+
+
+static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node)
+{
+    assert(diff); assert(node);
+
+    fprintf(FILE, "\\begin{dmath*}\n");
+    fprintf(FILE, "\\left( ");
+    printNode(diff, node);
+    fprintf(FILE, " \\right)' = ");
+}
 
 
 static TreeNode* nodeDup(const TreeNode* node)
@@ -132,18 +147,31 @@ bool containsVariable(TreeNode* node, size_t var_idx)
 }
 
 
-TreeNode* diffPow(TreeNode* left, TreeNode* right, size_t var_idx)
+TreeNode* diffPow(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx)
 {
+    assert(diff); assert(left); assert(right); assert(left->parent);
+
     if (!left || !right)
         return NULL;
 
     bool left_contains = containsVariable(left, var_idx);
     bool right_contains = containsVariable(right, var_idx);
 
-    if (!left_contains && !right_contains)
+    printDerivativeExpression(diff, left->parent);
+
+    if (!left_contains && !right_contains) {
+        fprintf(FILE, "0"); fprintf(FILE, "\\end{dmath*}\n");
         return CNUM(0);
-    if (left_contains && !right_contains)
+    }
+    if (left_contains && !right_contains) {
+        fprintf(FILE, "\\left( "); printNode(diff, right);
+        fprintf(FILE, " \\right) \\cdot \\left("); printNode(diff, left);
+        fprintf(FILE, "\\right)^{ "); printNode(diff, right); fprintf(FILE, " - 1} \\cdot ");
+        fprintf(FILE, "\\left( "); printNode(diff, left); fprintf(FILE, "\\right)'\n");
+        fprintf(FILE, "\\end{dmath*}\n");
+
         return MUL(MUL(cR, POW(cL, SUB(cR, CNUM(1)))), dL);
+    }
     if (!left_contains && right_contains)
         return MUL(MUL(POW(cL, cR), LOG(CNUM(M_E), cL)), dR);
     else
@@ -151,14 +179,12 @@ TreeNode* diffPow(TreeNode* left, TreeNode* right, size_t var_idx)
 }
 
 
-TreeNode* diffLog(TreeNode* left, TreeNode* right, size_t var_idx)
+TreeNode* diffLog(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx)
 {
     if (!left || !right)
         return NULL;
     
     bool left_contains = containsVariable(left, var_idx);
-
-
     if (!left_contains)
         return DIV(dR, MUL(cR, LOG(CNUM(M_E), cL)));
     else
@@ -167,18 +193,53 @@ TreeNode* diffLog(TreeNode* left, TreeNode* right, size_t var_idx)
 }
 
 
-static TreeNode* diffOp(TreeNode* node, size_t var_idx)
+TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
 {
     assert(node);
 
     switch (node->value.op) {
-        case OP_ADD:   return ADD(dNL, dNR);
-        case OP_SUB:   return SUB(dNL, dNR);
-        case OP_MUL:   return ADD(MUL(dNL, cNR), MUL(cNL, dNR));
-        case OP_DIV:   return DIV(SUB(MUL(dNL, cNR), MUL(cNL, dNR)), POW(cNR, CNUM(2)));
+        case OP_ADD: {
+            printDerivativeExpression(diff, node);
+            fprintf(FILE, "\\left( ");
+            printNode(diff, NL); fprintf(FILE, " \\right)' + \\left( ");
+            printNode(diff, NR); fprintf(FILE, " \\right)'\n");
+            fprintf(FILE, "\\end{dmath*}\n");
 
-        case OP_POW:   return diffPow(NL, NR, var_idx);
-        case OP_LOG:   return diffLog(NL, NR, var_idx);
+            return ADD(dNL, dNR);
+        }
+        case OP_SUB: {
+            printDerivativeExpression(diff, node);
+            fprintf(FILE, "\\left( ");
+            printNode(diff, NL); fprintf(FILE, " \\right)' - \\left( ");
+            printNode(diff, NR); fprintf(FILE, " \\right)'\n");
+            fprintf(FILE, "\\end{dmath*}\n");
+
+            return SUB(dNL, dNR);
+        }
+        case OP_MUL: {
+            printDerivativeExpression(diff, node);
+            fprintf(FILE, "\\left( "); printNode(diff, NL);
+            fprintf(FILE, " \\right)' \\cdot \\left( "); printNode(diff, NR);
+            fprintf(FILE, " \\right) + \\left( "); printNode(diff, NL);
+            fprintf(FILE, "\\right) \\cdot \\left( "); printNode(diff, NR);
+            fprintf(FILE, " \\right)'\n"); fprintf(FILE, "\\end{dmath*}\n");
+
+            return ADD(MUL(dNL, cNR), MUL(cNL, dNR));
+        }
+        case OP_DIV: {
+            printDerivativeExpression(diff, node);
+            fprintf(FILE, "\\frac{\\left( "); printNode(diff, NL);
+            fprintf(FILE, " \\right)' \\cdot \\left( "); printNode(diff, NR);
+            fprintf(FILE, " \\right) - \\left( "); printNode(diff, NL);
+            fprintf(FILE, "\\right) \\cdot \\left( "); printNode(diff, NR);
+            fprintf(FILE, " \\right)'}{"); printNode(diff, NR);
+            fprintf(FILE, "}\n"); fprintf(FILE, "\\end{dmath*}\n");
+
+            return DIV(SUB(MUL(dNL, cNR), MUL(cNL, dNR)), POW(cNR, CNUM(2)));
+        }
+
+        case OP_POW:   return diffPow(diff, NL, NR, var_idx);
+        case OP_LOG:   return diffLog(diff, NL, NR, var_idx);
 
         case OP_SIN:   return MUL(COS(cNR), dNR);
         case OP_COS:   return MUL(MUL(CNUM(-1), SIN(cNR)), dNR);
@@ -206,7 +267,7 @@ static TreeNode* diffOp(TreeNode* node, size_t var_idx)
 }
 
 
-TreeNode* diffNode(TreeNode* node, size_t var_idx)
+TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx)
 {
     assert(node);
 
@@ -217,7 +278,9 @@ TreeNode* diffNode(TreeNode* node, size_t var_idx)
                 return CNUM(1);
             else
                 return CNUM(0);
-        case NODE_OP: return diffOp(node, var_idx);
+        case NODE_OP: {
+            return diffOp(diff, node, var_idx);
+        }
         default: return NULL;
     }    
 }

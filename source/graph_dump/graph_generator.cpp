@@ -92,12 +92,12 @@ static void generateSimpleNode(Differentiator* diff, TreeNode* node,
 
     fprintf(graph_file, "penwidth=2.0, style=filled, label=\"");
     switch (node->type) {
-        case NODE_OP:  fprintf(graph_file, "%s", OP_TABLE[node->value.op].symbol);   break;
-        case NODE_VAR: fprintf(graph_file, "%lf ('%s')",
-                               diff->var_table.variables[node->value.var_idx].value,
-                               diff->var_table.variables[node->value.var_idx].name); break;
-        case NODE_NUM: fprintf(graph_file, "%.4lf", node->value.num_val);            break;
-        default:       fprintf(graph_file, "UNKNOWN_TYPE");                          break;
+        case NODE_OP:  fprintf(graph_file, "%s", OP_TABLE[node->value.op].symbol);    break;
+        case NODE_VAR: fprintf(graph_file, "%s (%g)",
+                               diff->var_table.variables[node->value.var_idx].name,
+                               diff->var_table.variables[node->value.var_idx].value); break;
+        case NODE_NUM: fprintf(graph_file, "%.4lf", node->value.num_val);             break;
+        default:       fprintf(graph_file, "UNKNOWN_TYPE");                           break;
     }
     fprintf(graph_file, "\"];\n");
 
@@ -115,9 +115,10 @@ static void generateSimpleNode(Differentiator* diff, TreeNode* node,
 }
 
 
-void generateGraph(Differentiator* diff, BinaryTree* tree, const char* graph_filename)
+void generateGraph(Differentiator* diff, size_t tree_idx, const char* graph_filename)
 {
-    assert(diff); assert(tree); assert(tree->root); assert(graph_filename);
+    assert(diff); assert(diff->forest.trees);
+    assert(diff->forest.trees[tree_idx].root); assert(graph_filename);
 
     FILE* graph_file = fopen(graph_filename, "w");
     assert(graph_file);
@@ -128,7 +129,10 @@ void generateGraph(Differentiator* diff, BinaryTree* tree, const char* graph_fil
 
     int counter = 0;
     int rank = 0;
-    generateSimpleNode(diff, tree->root, graph_file, rank, &counter);
+    if (diff->args.simple_graph)
+        generateSimpleNode(diff, diff->forest.trees[tree_idx].root, graph_file, rank, &counter);
+    else
+        generateNode(diff, diff->forest.trees[tree_idx].root, graph_file, rank, &counter);
 
     fprintf(graph_file, "}\n\n");
 
