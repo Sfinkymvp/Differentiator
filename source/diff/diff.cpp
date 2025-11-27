@@ -36,13 +36,13 @@ static OperationStatus diffForestResize(Differentiator* diff)
 
 OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
 {
-    assert(diff); assert(diff->forest.trees); assert(var_idx < diff->var_table.count);
+    assert(diff); assert(diff->forest.trees); 
 
     if (diff->forest.count == diff->forest.capacity)
         diffForestResize(diff);
     assert(diff->forest.count < diff->forest.capacity);
 
-    fprintf(diff->tex_dump.file, "Начинаем вычислять %zu производную функции\n", diff->forest.count);
+    fprintf(diff->tex_dump.file, "Начинаем вычислять %zu производную функции:\n", diff->forest.count);
 
     TREE_CREATE(&diff->forest.trees[diff->forest.count], "create diff tree");
     diff->forest.trees[diff->forest.count].root = diffNode(diff,
@@ -50,6 +50,7 @@ OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
     if (!diff->forest.trees[diff->forest.count].root)
         return STATUS_DIFF_CALCULATE_ERROR;
 
+    fprintf(diff->tex_dump.file, "\nПосле дифференцирования:\n");
     printExpression(diff, diff->forest.count);
     diff->forest.count++;
 
@@ -129,7 +130,21 @@ void diffCalculateValue(Differentiator* diff, size_t tree_idx)
     assert(diff->forest.trees[tree_idx].root);
 
     double value = diffEvaluate(diff, diff->forest.trees[diff->forest.count - 1].root);
-    printf("Expression value: %g\n", value);
+    printf("Value of %zu derivative: %g\n", tree_idx, value);
+}
+
+
+void diffTaylorSeries(Differentiator* diff)
+{
+    assert(diff); assert(diff->forest.trees);
+
+    fprintf(diff->tex_dump.file, "\\chapter{Разложение функции по формуле Тейлора}");
+    fprintf(diff->tex_dump.file, "Напомню, что наша функция выглядит следующим образом:\n");
+    printExpression(diff, 0);
+    diff->var_table.variables[0].value = diff->args.taylor_center;
+
+    fprintf(diff->tex_dump.file, "Разложим его по формуле Тейлора с остаточным членом в форме Пеано:\n");
+    printTaylorSeries(diff);
 }
 
 
@@ -138,7 +153,7 @@ OperationStatus defineVariables(Differentiator* diff)
     assert(diff); assert(diff->var_table.variables);
 
     for (size_t index = 0; index < diff->var_table.count; index++) {
-        printf("What is value of variable '%s'?", diff->var_table.variables[index].name);
+        printf("Value of variable '%s': ", diff->var_table.variables[index].name);
         if (scanf("%lf", &diff->var_table.variables[index].value) != 1) {
             fprintf(stderr, "Error: variable %s not defined\n", diff->var_table.variables[index].name);
             return STATUS_IO_INVALID_USER_INPUT;

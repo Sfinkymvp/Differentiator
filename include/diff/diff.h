@@ -18,6 +18,9 @@ double diffEvaluate(Differentiator* diff, const TreeNode* node);
 void diffCalculateValue(Differentiator* diff, size_t tree_idx);
 
 
+void diffTaylorSeries(Differentiator* diff);
+
+
 OperationStatus defineVariables(Differentiator* diff);
 
 

@@ -5,11 +5,13 @@
 #include <assert.h>
 #include <errno.h>
 
-
 #include "tree/tree_io.h"
+#include "tree/tree.h"
+#include "tree/tree_parse.h"
+
 #include "diff/diff_var_table.h"
 #include "diff/diff_defs.h"
-#include "tree/tree.h"
+
 #include "status.h"
 
 
@@ -37,7 +39,10 @@ OperationStatus diffLoadExpression(Differentiator* diff)
     if (input_file == NULL)
         return STATUS_IO_FILE_OPEN_ERROR;
 
-    status = treeLoadFromFile(diff, &diff->forest.trees[0], input_file);
+    if (diff->args.infix_input)
+        status = treeInfixLoad(diff, 0, input_file);
+    else 
+        status = treePrefixLoad(diff, 0, input_file);
     if (fclose(input_file) != 0 && status == STATUS_OK)
         status = STATUS_IO_FILE_CLOSE_ERROR;
 
@@ -46,10 +51,37 @@ OperationStatus diffLoadExpression(Differentiator* diff)
 }
 
 
-OperationStatus treeLoadFromFile(Differentiator* diff, BinaryTree* tree,
-                                   FILE* input_file)
+OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
 {
-    assert(diff); assert(tree); assert(input_file);
+    assert(diff); assert(tree_idx < diff->forest.capacity); assert(input_file);
+ 
+    size_t file_size = getFileSize(input_file);
+    if (file_size == 0)
+        return STATUS_IO_FILE_EMPTY;
+
+    char* src_code = (char*)calloc(file_size + 1, 1);
+    if (src_code == NULL) {
+        fclose(input_file);
+        return STATUS_SYSTEM_OUT_OF_MEMORY;
+    }
+
+    size_t read_size = fread(src_code, 1, file_size, input_file);
+    if (read_size != file_size)
+        return STATUS_IO_FILE_READ_ERROR;
+
+    char* buffer = src_code;
+    diff->forest.trees[tree_idx].root = getTree(&buffer);
+    free(src_code);
+    if (diff->forest.trees[tree_idx].root == NULL)
+        return STATUS_IO_FILE_READ_ERROR;
+
+    return STATUS_OK;
+}
+
+
+OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
+{
+    assert(diff); assert(diff->forest.trees); assert(input_file);
     
     size_t file_size = getFileSize(input_file);
     if (file_size == 0)
@@ -67,14 +99,11 @@ OperationStatus treeLoadFromFile(Differentiator* diff, BinaryTree* tree,
         status = STATUS_IO_FILE_READ_ERROR;
     }
     if (status == STATUS_OK) {
-        printf("BUFFER DUMP (load expression from disk)\n");
         int position = 0;    
-        status = readNode(&tree->root, diff, src_code, &position);
+        status = readNode(&diff->forest.trees[tree_idx].root, diff, src_code, &position);
     }
 
     free(src_code);
-    if (status == STATUS_OK)
-        printf("Tree loaded successfully\n");
     return status;
 }
 
@@ -183,8 +212,6 @@ OperationStatus readNode(TreeNode** node, Differentiator* diff,
 
     skipWhitespaces(src_code, position);
 
-    printf("%s\n", src_code + *position);
-
     if (src_code[*position] == '(') {
         return parseNode(node, diff, src_code, position);
     } else if (strncmp(&src_code[*position], "nil", 3) == 0) {
@@ -205,9 +232,12 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
     diff->args.output_file = NULL;
     diff->args.simple_graph = false;
     diff->args.derivative_order = 1;
+    diff->args.infix_input = false;
+    diff->args.compute_derivative = false;
+    diff->args.taylor_center = 0;
+    diff->args.taylor_decomposition = false;
 
     for (int index = 1; index < argc; index++) {
-        printf("%s\n", argv[index]);
         if (strcmp(argv[index], "-i") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 diff->args.input_file = argv[index + 1];
@@ -223,8 +253,6 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
             } else {
                 return STATUS_CLI_UNKNOWN_OPTION;
             }
-        } else if (strcmp(argv[index], "-s") == 0) {
-            diff->args.simple_graph = true;
         } else if (strcmp(argv[index], "-n") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 char* end = NULL;
@@ -235,6 +263,23 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
                 index++;
             } else
                 return STATUS_CLI_UNKNOWN_OPTION;
+        } else if (strcmp(argv[index], "-t") == 0) {
+            if (index + 1 < argc && argv[index + 1][0] != '-') {
+                char* end = NULL;
+                diff->args.taylor_center = strtod(argv[index + 1], &end);
+                diff->args.taylor_decomposition = true;
+                if (*end != '\0')
+                    return STATUS_CLI_UNKNOWN_OPTION;
+                
+                index++;
+            } else
+                return STATUS_CLI_UNKNOWN_OPTION;
+        } else if (strcmp(argv[index], "-s") == 0) {
+            diff->args.simple_graph = true;
+        } else if (strcmp(argv[index], "-infix") == 0) {
+            diff->args.infix_input = true;
+        } else if (strcmp(argv[index], "-c") == 0) {
+            diff->args.compute_derivative = true;
         } else {
             return STATUS_CLI_UNKNOWN_OPTION;
         }

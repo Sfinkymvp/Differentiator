@@ -37,8 +37,12 @@ typedef struct {
 typedef struct {
     const char* input_file;
     const char* output_file;
-    bool simple_graph;
     size_t derivative_order;
+    double taylor_center;
+    bool simple_graph;
+    bool infix_input;
+    bool compute_derivative; 
+    bool taylor_decomposition;
 } CmdArgs;
 
 

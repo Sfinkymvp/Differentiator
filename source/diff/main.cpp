@@ -27,7 +27,7 @@ int main(const int argc, const char** argv)
         printIntroduction(&diff);
 
     TREE_DUMP(&diff, 0, STATUS_OK, "source tree");
-    if (status == STATUS_OK)
+    if (status == STATUS_OK && diff.args.compute_derivative)
         status = defineVariables(&diff);
     if (status == STATUS_OK) {
         for (size_t index = 1; index <= diff.args.derivative_order; index++) {
@@ -37,13 +37,15 @@ int main(const int argc, const char** argv)
                 printf("lox\n");
                 break;
             }
-            printf("INDEX: %zu, VALUE:\n", index);
-            diffCalculateValue(&diff, index);
+
             optimizeTree(&diff, index);
-            printf("INDEX: %zu, VALUE:\n", index);
-            diffCalculateValue(&diff, index);
+            if (diff.args.compute_derivative)
+                diffCalculateValue(&diff, index);
         }
     }
+
+    if (diff.args.taylor_decomposition)
+        diffTaylorSeries(&diff);
 
     diffDestructor(&diff);
 

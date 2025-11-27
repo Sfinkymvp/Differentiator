@@ -11,13 +11,19 @@ void printOperator(Differentiator* diff, TreeNode* node);
 void printNode(Differentiator* diff, TreeNode* node);
 
 
-void printPaintedTree(Differentiator* diff, TreeNode* node, TreeNode* color_node);
+void printPaintedOperator(Differentiator* diff, TreeNode* node, TreeNode* color_node);
+
+
+void printPaintedNode(Differentiator* diff, TreeNode* node, TreeNode* color_node);
 
 
 void printExpression(Differentiator* diff, size_t tree_idx);
 
 
 TreeNode* printAndDifferentiate(Differentiator* diff, TreeNode* node, size_t var_idx);
+
+
+void printTaylorSeries(Differentiator* diff);
 
 
 void texInit(Differentiator* diff);

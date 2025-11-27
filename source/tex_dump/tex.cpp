@@ -1,18 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 
 #include "tex_dump/tex.h"
 
 #include "diff/diff_defs.h"
+#include "diff/diff.h"
 #include "diff/diff_process.h"
 
 #include "tree/tree.h"
 
 
 static const char* TEX_DUMP_DIRECTORY = "tex";
+static const double EPS = 1e-7;
 
 
 void printOperator(Differentiator* diff, TreeNode* node)
@@ -178,18 +181,158 @@ void printNode(Differentiator* diff, TreeNode* node)
 }
 
 
-void printPaintedTree(Differentiator* diff, TreeNode* node, TreeNode* color_node)
+void printPaintedOperator(Differentiator* diff, TreeNode* node, TreeNode* color_node)
+{
+    assert(diff); assert(diff->tex_dump.file); assert(node);
+    assert(node->type == NODE_OP); assert(node->value.op != OP_NONE);
+    assert(node->right); assert(color_node);
+
+    switch (node->value.op) {
+        case OP_ADD:
+            fprintf(diff->tex_dump.file, "(");
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, " + ");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, ")");
+            break;
+        case OP_SUB:
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, " - ");
+            printPaintedNode(diff, node->right, color_node);
+            break;
+        case OP_MUL:
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, " \\cdot ");
+            printPaintedNode(diff, node->right, color_node);
+            break;
+        case OP_DIV:
+            fprintf(diff->tex_dump.file, " \\frac{");
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, "}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        
+        case OP_POW:
+            fprintf(diff->tex_dump.file, "\\left( ");
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, "\\right) ^{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_LOG:
+            fprintf(diff->tex_dump.file, "\\log_{");
+            printPaintedNode(diff, node->left, color_node);
+            fprintf(diff->tex_dump.file, "}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        
+        case OP_SIN:
+            fprintf(diff->tex_dump.file, "\\sin{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_COS:
+            fprintf(diff->tex_dump.file, "\\cos{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_TAN:
+            fprintf(diff->tex_dump.file, "\\tan{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_COT:
+            fprintf(diff->tex_dump.file, "\\cot{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+
+        case OP_ASIN:
+            fprintf(diff->tex_dump.file, "\\arcsin{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ACOS:
+            fprintf(diff->tex_dump.file, "\\arccos{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ATAN:
+            fprintf(diff->tex_dump.file, "\\arctan{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ACOT:
+            fprintf(diff->tex_dump.file, "\\arccot{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+
+        case OP_SINH:
+            fprintf(diff->tex_dump.file, "\\sinh{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_COSH:
+            fprintf(diff->tex_dump.file, "\\cosh{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_TANH:
+            fprintf(diff->tex_dump.file, "\\tanh{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_COTH:
+            fprintf(diff->tex_dump.file, "\\coth{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+
+        case OP_ASINH:
+            fprintf(diff->tex_dump.file, "\\operatorname{asinh}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ACOSH:
+            fprintf(diff->tex_dump.file, "\\operatorname{acosh}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ATANH:
+            fprintf(diff->tex_dump.file, "\\operatorname{atanh}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+        case OP_ACOTH:
+            fprintf(diff->tex_dump.file, "\\operatorname{acoth}{");
+            printPaintedNode(diff, node->right, color_node);
+            fprintf(diff->tex_dump.file, "} ");
+            break;
+    
+        case OP_NONE:
+            fprintf(stderr, "Error: OP_NONE detected in tex print\n");
+            break;
+        default:
+            fprintf(stderr, "Critical error: Unknown op type %d\n", node->value.op);
+            break;
+    }
+}
+
+
+void printPaintedNode(Differentiator* diff, TreeNode* node, TreeNode* color_node)
 {
     assert(diff); assert(diff->tex_dump.file); assert(diff->var_table.variables);
     assert(node); assert(color_node);
 
-//    if (node == color_node)
+    if (node == color_node)
         fprintf(diff->tex_dump.file, "{\\color{red} ");
 
-    printf("node: %p, color_node: %p\n", node, color_node);
     switch (node->type) {
         case NODE_OP:
-            printOperator(diff, node);
+            printPaintedOperator(diff, node, color_node);
             break;
         case NODE_VAR:
             fprintf(diff->tex_dump.file, "%s", diff->var_table.variables[node->value.var_idx].name);
@@ -202,7 +345,7 @@ void printPaintedTree(Differentiator* diff, TreeNode* node, TreeNode* color_node
             break;
     }
 
- //   if (node == color_node) 
+    if (node == color_node) 
         fprintf(diff->tex_dump.file, "} ");
 }
 
@@ -212,27 +355,53 @@ void printExpression(Differentiator* diff, size_t tree_idx)
     assert(diff); assert(diff->tex_dump.file); assert(diff->forest.trees);
     assert(tree_idx <= diff->forest.count);
 
-    fprintf(diff->tex_dump.file, "\\begin{align}\n");
+    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
     printNode(diff, diff->forest.trees[tree_idx].root);
-    fprintf(diff->tex_dump.file, "\n\\end{align}\n\n");
+    fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
 }
 
 
-TreeNode* printAndDifferentiate(Differentiator* diff, TreeNode* node, size_t var_idx)
+static double factorial(size_t n)
 {
-    assert(diff); assert(diff->forest.trees); assert(diff->tex_dump.file); assert(node); 
+    if (n == 0 || n == 1) return 1;
 
-    fprintf(diff->tex_dump.file, "\\text{Differentiation:}\n");
-    fprintf(diff->tex_dump.file, "\\begin{align}\n");
-    fprintf(diff->tex_dump.file, "\\left( ");
-    printNode(diff, node);
-    fprintf(diff->tex_dump.file, " \\right)' = ");
+    double result = 1;
+    for (size_t index = 2; index <= n; index++)
+        result *= (double)index;
 
-    TreeNode* new_node = diffOp(diff, node, var_idx);
-    printNode(diff, new_node);
+    return result;
+}
 
-    fprintf(diff->tex_dump.file, "\\end{align}\n\n");
-    return new_node;
+
+void printTaylorSeries(Differentiator* diff)
+{
+    assert(diff); assert(diff->tex_dump.file); 
+    assert(diff->var_table.variables); assert(diff->forest.trees);  
+    
+    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+    fprintf(diff->tex_dump.file, "f(%s) = ", diff->var_table.variables[0].name);
+    fprintf(diff->tex_dump.file, "%g", diffEvaluate(diff, diff->forest.trees[0].root));
+
+    for (size_t index = 1; index < diff->forest.count; index++) {
+        double coefficient = diffEvaluate(diff, diff->forest.trees[index].root) / factorial(index);
+        if (fabs(coefficient) < EPS)
+            continue;
+
+        if (fabs(diff->var_table.variables[0].value) < EPS)
+            fprintf(diff->tex_dump.file, " %+g \\cdot %s^{%zu}",
+                coefficient, diff->var_table.variables[0].name, index);
+        else   
+            fprintf(diff->tex_dump.file, " %+g \\cdot (%s%+g)^{%zu}",
+                coefficient, diff->var_table.variables[0].name, -1*diff->args.taylor_center, index);
+    }
+
+    if (fabs(diff->var_table.variables[0].value) < EPS)
+        fprintf(diff->tex_dump.file, " + o(%s^{%zu})\n", diff->var_table.variables[0].name,
+                diff->args.derivative_order + 1);
+    else 
+        fprintf(diff->tex_dump.file, " + o((%s%+g)^{%zu})\n", diff->var_table.variables[0].name,
+        -1*diff->args.taylor_center, diff->args.derivative_order + 1);
+    fprintf(diff->tex_dump.file, "\\end{dmath*}\n");
 }
 
 
@@ -256,7 +425,7 @@ void texInit(Differentiator* diff)
     assert(diff->tex_dump.file);
 
     fprintf(diff->tex_dump.file,
-        "\\documentclass[14pt,a4paper]{extreport}\n"
+        "\\documentclass[12pt,a4paper]{extreport}\n"
         "\\input{%s/style}\n", TEX_DUMP_DIRECTORY);
 
     printTitle(diff);
@@ -279,7 +448,7 @@ void texClose(Differentiator* diff)
     diff->tex_dump.file = NULL;
 
     char command[BUFFER_SIZE * 2] = {};
-    snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s", diff->tex_dump.filename);
+    snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s > /dev/null", diff->tex_dump.filename);
     system(command);
 }
 
@@ -291,7 +460,7 @@ void printTitle(Differentiator* diff)
     fprintf(diff->tex_dump.file,
         "\\title{Дифференцирование n раз дифференцируемой "
         "в точке пересечения матана и алгема сложной непрерывной функции}\n"
-        "\\author{Сгенерировано программой студента Московского Физико-Технического Университета}\n"
+        "\\author{Затехано вручную sfinkymvp}\n"
         "\\date{Документ сгенерирован: \\today}\n");
 }
 

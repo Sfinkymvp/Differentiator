@@ -9,8 +9,10 @@
 OperationStatus diffLoadExpression(Differentiator* diff);
 
 
-OperationStatus treeLoadFromFile(Differentiator* diff, BinaryTree* tree,
-                                   FILE* input_file);
+OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file);
+
+
+OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file);
 
 
 OperationStatus readTitle(TreeNode* node, Differentiator* diff,
@@ -19,7 +21,6 @@ OperationStatus readTitle(TreeNode* node, Differentiator* diff,
 
 OperationStatus readNode(TreeNode** node, Differentiator* diff,
                          char* src_code, int* position);
-
 
 
 OperationStatus parseArgs(Differentiator* diff, const int argc, const char** argv);

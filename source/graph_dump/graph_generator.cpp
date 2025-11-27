@@ -41,10 +41,10 @@ static void generateNode(Differentiator* diff, TreeNode* node,
                          "\"{<pointer>%p | Type: %s | Value: ", node, nodeTypeToString(node->type));
     switch (node->type) {
         case NODE_OP:  fprintf(graph_file, "%s", OP_TABLE[node->value.op].name);     break;
-        case NODE_VAR: fprintf(graph_file, "%lf ('%s')",
+        case NODE_VAR: fprintf(graph_file, "%g ('%s')",
                                diff->var_table.variables[node->value.var_idx].value,
                                diff->var_table.variables[node->value.var_idx].name); break;
-        case NODE_NUM: fprintf(graph_file, "%.4lf", node->value.num_val);            break;
+        case NODE_NUM: fprintf(graph_file, "%g", node->value.num_val);            break;
         default:       fprintf(graph_file, "UNKNOWN_TYPE");                          break;
     }
 
@@ -96,7 +96,7 @@ static void generateSimpleNode(Differentiator* diff, TreeNode* node,
         case NODE_VAR: fprintf(graph_file, "%s (%g)",
                                diff->var_table.variables[node->value.var_idx].name,
                                diff->var_table.variables[node->value.var_idx].value); break;
-        case NODE_NUM: fprintf(graph_file, "%.4lf", node->value.num_val);             break;
+        case NODE_NUM: fprintf(graph_file, "%g", node->value.num_val);             break;
         default:       fprintf(graph_file, "UNKNOWN_TYPE");                           break;
     }
     fprintf(graph_file, "\"];\n");

@@ -24,7 +24,7 @@ SRCDIR = source
 
 FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/tree/tree_io.o \
 	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o $(OBJDIR)/diff/diff_process.o \
-	$(OBJDIR)/diff/diff_optimize.o
+	$(OBJDIR)/diff/diff_optimize.o $(OBJDIR)/tree/tree_parse.o
 DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o \
 	$(OBJDIR)/tex_dump/tex.o
 FLAGS += -Iinclude
