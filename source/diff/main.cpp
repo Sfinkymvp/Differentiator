@@ -26,9 +26,10 @@ int main(const int argc, const char** argv)
     if (status == STATUS_OK)
         printIntroduction(&diff);
 
-    TREE_DUMP(&diff, 0, STATUS_OK, "source tree");
-    if (status == STATUS_OK && diff.args.compute_derivative)
+    TREE_DUMP(&diff, 0, status, "source tree");
+    if (status == STATUS_OK && diff.args.compute_derivative) {
         status = defineVariables(&diff);
+    }
     if (status == STATUS_OK) {
         for (size_t index = 1; index <= diff.args.derivative_order; index++) {
             status = diffCalculateDerivative(&diff, 0);
@@ -44,11 +45,10 @@ int main(const int argc, const char** argv)
         }
     }
 
-    if (diff.args.taylor_decomposition)
-        diffTaylorSeries(&diff);
+    if (status == STATUS_OK && diff.args.taylor_decomposition)
+        printTaylorSeries(&diff);
 
     diffDestructor(&diff);
-
     return 0;
 }
 

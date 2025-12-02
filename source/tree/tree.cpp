@@ -43,6 +43,7 @@ const OpInfo OP_TABLE[] = {
 
     OP_INFO_ITEM(OP_NONE, "")
 };
+const size_t OP_TABLE_COUNT = sizeof(OP_TABLE) / sizeof(*OP_TABLE);
 
 
 static OperationStatus nodeVerify(TreeNode* node)

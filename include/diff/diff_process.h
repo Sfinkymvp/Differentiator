@@ -23,4 +23,7 @@ TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx);
 TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx);
 
 
+//TreeNode* createTaylorTree(Differentiator* diff, size_t derivative_number);
+
+
 #endif // DIFF_PROCESS_H_

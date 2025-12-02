@@ -70,7 +70,7 @@ OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input
         return STATUS_IO_FILE_READ_ERROR;
 
     char* buffer = src_code;
-    diff->forest.trees[tree_idx].root = getTree(&buffer);
+    diff->forest.trees[tree_idx].root = getTree(diff, &buffer);
     free(src_code);
     if (diff->forest.trees[tree_idx].root == NULL)
         return STATUS_IO_FILE_READ_ERROR;
@@ -151,7 +151,7 @@ OperationStatus readTitle(TreeNode* node, Differentiator* diff,
         status = STATUS_OK;
     } else if (endptr == buffer) {
         node->type = NODE_VAR;
-        status = addVariable(diff, &node->value.var_idx, buffer);
+        status = addVariable(diff, &node->value.var_idx, buffer, strlen(buffer));
     } else {
         status = STATUS_PARSER_INVALID_IDENTIFIER;
     }

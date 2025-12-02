@@ -10,6 +10,8 @@
 #include "tex_dump/tex.h"
     
 
+const double EPS = 1e-7;
+
 #define FILE diff->tex_dump.file
 #define PR(string) fprintf(FILE, string)
 
@@ -119,6 +121,18 @@ TreeNode* createOp(OpType op, TreeNode* left, TreeNode* right)
 
     return node;
 }
+
+
+/*static TreeNode* createVar(size_t var_idx)
+{
+    TreeNode* node = (TreeNode*)calloc(1, sizeof(TreeNode));
+    if (node == NULL)
+        return NULL;
+
+    node->type = NODE_VAR;
+    node->value.var_idx = var_idx;
+    return node;
+}*/
 
 
 static TreeNode* createNum(double value) {
@@ -285,18 +299,18 @@ TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
 
         case OP_ASIN:  return MUL(POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5)), dNR);
         case OP_ACOS:  return MUL(MUL(CNUM(-1), POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5))), dNR);
-        case OP_ATAN:  return MUL(POW(ADD(CNUM(1), POW(cNR, CNUM(2))), CNUM(-1)), dNR);
-        case OP_ACOT:  return MUL(MUL(POW(ADD(CNUM(1), POW(cNR, CNUM(2))), CNUM(-1)), CNUM(-1)), dNR);
+        case OP_ATAN:  return DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2))));
+        case OP_ACOT:  return MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), CNUM(-1));
         
         case OP_SINH:  return MUL(COSH(cNR), dNR);
         case OP_COSH:  return MUL(SINH(cNR), dNR);
-        case OP_TANH:  return DIV(dNR, POW(COSH(cNR), CNUM(2)));
+        case OP_TANH:  return MUL(DIV(CNUM(1), POW(COSH(cNR), CNUM(2))), dNR);
         case OP_COTH:  return MUL(DIV(CNUM(-1), POW(SINH(cNR), CNUM(2))), dNR);
 
-        case OP_ASINH: return DIV(dNR, POW(ADD(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5)));
-        case OP_ACOSH: return DIV(dNR, POW(SUB(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5)));
-        case OP_ATANH: return MUL(POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-1)), dNR);
-        case OP_ACOTH: return MUL(POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-1)), dNR);
+        case OP_ASINH: return MUL(DIV(CNUM(1), POW(ADD(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5))), dNR);
+        case OP_ACOSH: return MUL(DIV(CNUM(1), POW(SUB(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5))), dNR);
+        case OP_ATANH: return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cNR, CNUM(2)))), dNR);
+        case OP_ACOTH: return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cNR, CNUM(2)))), dNR);
 
         case OP_NONE:  fprintf(stderr, "Operation 'NONE' detected\n"); return NULL;
         default:       fprintf(stderr, "Unknown operation\n"); return NULL;
@@ -321,3 +335,33 @@ TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx)
         default: return NULL;
     }    
 }
+
+
+/*static double factorial(size_t n)
+{
+    if (n == 0 || n == 1) return 1;
+
+    double result = 1;
+    for (size_t index = 2; index <= n; index++)
+        result *= (double)index;
+
+    return result;
+}
+
+
+TreeNode* createTaylorTree(Differentiator* diff, size_t d_num)
+{
+    assert(diff); assert(diff->forest.trees); assert(diff->forest.count);
+
+    if (d_num == diff->args.derivative_order)
+        return CNUM(0);
+
+    double d_val = diffEvaluate(diff, diff->forest.trees[d_n].root) / factorial(d_n);
+    if (fabs(d_val) < EPS) {
+        return createTaylorTree(diff, d_num + 1);
+    } else if (der_val > 0) {
+        return ADD(MUL(CNUM(fabs(d_val)), POW(SUB(createVar(0), CNUM(2)), CNUM(d_num))), createTaylorTree(diff, d_num + 1));
+    } else {
+        return SUB(MUL(CNUM(fabs(d_val)), POW(SUB(createVar(0), CNUM(2)), CNUM())), createTaylorTree(diff, d_num + 1));
+    }
+}*/

@@ -24,12 +24,13 @@ static OperationStatus variableTableResize(Differentiator* diff)
 }
 
 
-OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* variable)
+OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* variable, size_t var_len)
 {
     assert(diff); assert(diff->var_table.variables); assert(var_idx); assert(variable);
 
     for (size_t index = 0; index < diff->var_table.count; index++) {
-        if (strcmp(variable, diff->var_table.variables[index].name) == 0) { 
+        const char* existing_name = diff->var_table.variables[index].name;
+        if (strncmp(variable, existing_name, var_len) == 0 && existing_name[var_len] == '\0') { 
             *var_idx = index;
             return STATUS_OK;
         }
@@ -41,9 +42,11 @@ OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* v
     }
     assert(diff->var_table.count < diff->var_table.capacity);
 
-    char* temp_ptr = strdup(variable);
+    char* temp_ptr = (char*)calloc(var_len + 1, 1);
     if (temp_ptr == NULL)
         return STATUS_SYSTEM_OUT_OF_MEMORY;
+    strncpy(temp_ptr, variable, var_len);
+    temp_ptr[var_len] = '\0';
 
     diff->var_table.variables[diff->var_table.count].name = temp_ptr;
     diff->var_table.variables[diff->var_table.count].value = 0;

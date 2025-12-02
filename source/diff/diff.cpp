@@ -124,6 +124,7 @@ double diffEvaluate(Differentiator* diff, const TreeNode* node)
     }
 }
 
+
 void diffCalculateValue(Differentiator* diff, size_t tree_idx)
 {
     assert(diff); assert(tree_idx < diff->forest.count);
@@ -146,6 +147,9 @@ void diffTaylorSeries(Differentiator* diff)
     fprintf(diff->tex_dump.file, "Разложим его по формуле Тейлора с остаточным членом в форме Пеано:\n");
     printTaylorSeries(diff);
 }
+
+
+
 
 
 OperationStatus defineVariables(Differentiator* diff)
