@@ -8,6 +8,7 @@
 #include "tex_dump/tex.h"
 
 #include "diff/diff_defs.h"
+#include "diff/diff_evaluate.h"
 #include "diff/diff.h"
 #include "diff/diff_process.h"
 
@@ -15,7 +16,6 @@
 
 
 static const char* TEX_DUMP_DIRECTORY = "tex";
-static const double EPS = 1e-7;
 
 
 void printOperator(Differentiator* diff, TreeNode* node)
@@ -380,10 +380,10 @@ void printTaylorSeries(Differentiator* diff)
     
     fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
     fprintf(diff->tex_dump.file, "f(%s) = ", diff->var_table.variables[0].name);
-    fprintf(diff->tex_dump.file, "%g", diffEvaluate(diff, diff->forest.trees[0].root));
+    fprintf(diff->tex_dump.file, "%g", evaluateNode(diff, diff->forest.trees[0].root));
 
     for (size_t index = 1; index < diff->forest.count; index++) {
-        double coefficient = diffEvaluate(diff, diff->forest.trees[index].root) / factorial(index);
+        double coefficient = evaluateNode(diff, diff->forest.trees[index].root) / factorial(index);
         if (fabs(coefficient) < EPS)
             continue;
 

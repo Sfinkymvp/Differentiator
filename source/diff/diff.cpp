@@ -18,7 +18,6 @@
 #include "tree/tree_io.h"
 
 
-
 static OperationStatus diffForestResize(Differentiator* diff)
 {
     assert(diff); assert(diff->forest.trees); assert(diff->forest.capacity != 0);
@@ -57,81 +56,6 @@ OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
     TREE_VERIFY(diff, diff->forest.count - 1, "diff tree");
 
     return STATUS_OK;
-}
-
-
-double diffOp(Differentiator* diff, const TreeNode* node)
-{
-    assert(diff);
-
-    double l_res  = diffEvaluate(diff, node->left);
-    double r_res = diffEvaluate(diff, node->right);
-
-    switch (node->value.op) {
-        case OP_ADD:   return l_res + r_res;
-        case OP_SUB:   return l_res - r_res;
-        case OP_MUL:   return l_res * r_res;
-        case OP_DIV: 
-            if (fabs(r_res) < 0.000001) {
-                printf("Division by zero\n");
-                return NAN;
-            }
-            return l_res / r_res;
-        
-        case OP_POW:   return pow(l_res, r_res);
-        case OP_LOG:   return log(r_res) / log(l_res);
-
-        case OP_SIN:   return sin(r_res);
-        case OP_COS:   return cos(r_res);
-        case OP_TAN:   return tan(r_res);
-        case OP_COT:   return 1 / tan(r_res);
-
-        case OP_ASIN:  return asin(r_res);
-        case OP_ACOS:  return acos(r_res);
-        case OP_ATAN:  return atan(r_res);
-        case OP_ACOT:  return atan(1 / r_res);
-
-        case OP_SINH:  return sinh(r_res);
-        case OP_COSH:  return cosh(r_res);
-        case OP_TANH:  return tanh(r_res);
-        case OP_COTH:  return 1 / tanh(r_res);
-        
-        case OP_ASINH: return asinh(r_res);
-        case OP_ACOSH: return acosh(r_res);
-        case OP_ATANH: return atanh(r_res);
-        case OP_ACOTH: return atanh(1 / r_res);
-
-        case OP_NONE:  return 0;
-        default:
-            printf("Unknown operation for evaluation\n");
-            return 0;
-    }
-}
-
-
-double diffEvaluate(Differentiator* diff, const TreeNode* node)
-{
-    assert(diff);
-
-    if (node == NULL)
-        return 0;
-
-    switch (node->type) {
-        case NODE_OP:  return diffOp(diff, node);
-        case NODE_VAR: return diff->var_table.variables[node->value.var_idx].value;
-        case NODE_NUM: return node->value.num_val;
-        default: fprintf(stderr, "Unknown node type!\n"); return 0;
-    }
-}
-
-
-void diffCalculateValue(Differentiator* diff, size_t tree_idx)
-{
-    assert(diff); assert(tree_idx < diff->forest.count);
-    assert(diff->forest.trees[tree_idx].root);
-
-    double value = diffEvaluate(diff, diff->forest.trees[diff->forest.count - 1].root);
-    printf("Value of %zu derivative: %g\n", tree_idx, value);
 }
 
 

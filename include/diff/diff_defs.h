@@ -6,6 +6,7 @@
 
 
 const size_t START_ELEMENT_COUNT = 4;
+const double EPS = 1e-7;
 
 
 typedef struct {

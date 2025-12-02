@@ -10,8 +10,6 @@
 #include "tex_dump/tex.h"
     
 
-const double EPS = 1e-7;
-
 #define FILE diff->tex_dump.file
 #define PR(string) fprintf(FILE, string)
 

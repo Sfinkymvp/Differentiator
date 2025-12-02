@@ -68,11 +68,11 @@ TreeNode* getTerm(Differentiator* diff, char** buffer)
 {
     assert(diff); assert(buffer); assert(*buffer);
 
-    TreeNode* node_1 = getPrimary(diff, buffer);
+    TreeNode* node_1 = getPower(diff, buffer);
     while (**buffer == '*' || **buffer == '/') {
         char op = **buffer;
         (*buffer)++;
-        TreeNode* node_2 = getPrimary(diff, buffer);
+        TreeNode* node_2 = getPower(diff, buffer);
 
         TreeNode* op_node = NULL;
         if (createNode(&op_node) != STATUS_OK) {
@@ -95,6 +95,38 @@ TreeNode* getTerm(Differentiator* diff, char** buffer)
             assert(0 && "ti lox");
         }
 
+        node_1 = op_node;
+    }
+
+    return node_1;
+}
+
+
+TreeNode* getPower(Differentiator* diff, char** buffer)
+{
+    assert(diff); assert(buffer); assert(*buffer);
+
+    TreeNode* node_1 = getPrimary(diff, buffer);
+    while (**buffer == '^') {
+        (*buffer)++;
+
+        TreeNode* node_2 = getPrimary(diff, buffer);
+
+        TreeNode* op_node = NULL;
+        createNode(&op_node);
+        if (op_node == NULL) {
+            deleteBranch(node_1);
+            deleteBranch(node_2);
+            return NULL;
+        }
+
+        op_node->type = NODE_OP;
+        op_node->value.op = OP_POW;
+        op_node->left = node_1;
+        op_node->right = node_2;
+
+        if (op_node->left)  node_1->parent = op_node;
+        if (op_node->right) node_2->parent = op_node;
         node_1 = op_node;
     }
 

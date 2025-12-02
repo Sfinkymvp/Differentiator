@@ -6,6 +6,7 @@
 #include "diff/diff.h"
 #include "diff/diff_process.h"
 #include "diff/diff_optimize.h"
+#include "diff/diff_evaluate.h"
 
 #include "status.h"
 
@@ -41,7 +42,7 @@ int main(const int argc, const char** argv)
 
             optimizeTree(&diff, index);
             if (diff.args.compute_derivative)
-                diffCalculateValue(&diff, index);
+                diffEvaluate(&diff, index);
         }
     }
 

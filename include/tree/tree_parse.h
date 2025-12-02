@@ -14,6 +14,9 @@ TreeNode* getExpression(Differentiator* diff, char** buffer);
 TreeNode* getTerm(Differentiator* diff, char** buffer);
 
 
+TreeNode* getPower(Differentiator* diff, char** buffer);
+
+
 TreeNode* getPrimary(Differentiator* diff, char** buffer) ;
 
 

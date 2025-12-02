@@ -5,6 +5,7 @@
 
 #include "diff/diff_optimize.h"
 #include "diff/diff_defs.h"
+#include "diff/diff_evaluate.h"
 #include "diff/diff.h"
 
 #include "tree/tree.h"
@@ -13,8 +14,6 @@
 
 #include "graph_dump/html_builder.h"
 
-
-static const double EPS = 1e-7;
 
 #define ZERO(node) isNum(node, 0)
 #define ONE(node)  isNum(node, 1)
@@ -48,7 +47,7 @@ static FoldStatus foldConstants(Differentiator* diff, TreeNode* node, size_t tre
                 printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
                 fprintf(diff->tex_dump.file, " = ");
 
-                double value = diffOp(diff, node);
+                double value = evaluateNode(diff, node);
                 deleteBranch(NL);
                 NL = NULL;
                 deleteBranch(NR);
