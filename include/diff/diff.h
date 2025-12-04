@@ -9,12 +9,6 @@
 OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx);
 
 
-void diffTaylorSeries(Differentiator* diff);
-
-
-OperationStatus defineVariables(Differentiator* diff);
-
-
 OperationStatus diffConstructor(Differentiator* diff, const int argc, const char** argv);
 
 

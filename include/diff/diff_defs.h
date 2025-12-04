@@ -9,6 +9,9 @@ const size_t START_ELEMENT_COUNT = 4;
 const double EPS = 1e-7;
 
 
+#define TEX_FILE diff->tex_dump.file
+
+
 typedef struct {
     FILE* file;
     char directory[BUFFER_SIZE];
@@ -36,14 +39,25 @@ typedef struct {
 
 
 typedef struct {
+    size_t order;
+    size_t diff_var;
+    bool compute; 
+} DerivativeInfo;
+
+
+typedef struct {
+    bool decomposition;
+    double center;
+} TaylorInfo;
+
+
+typedef struct {
     const char* input_file;
     const char* output_file;
-    size_t derivative_order;
-    double taylor_center;
-    bool simple_graph;
     bool infix_input;
-    bool compute_derivative; 
-    bool taylor_decomposition;
+    DerivativeInfo derivative_info;
+    TaylorInfo taylor_info;
+    bool simple_graph;
 } CmdArgs;
 
 

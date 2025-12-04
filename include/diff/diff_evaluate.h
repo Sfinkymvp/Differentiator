@@ -5,10 +5,9 @@
 #include "diff/diff_defs.h"
 
 
-double evaluateNode(Differentiator* diff, const TreeNode* node);
-
-
 void diffEvaluate(Differentiator* diff, size_t tree_idx);
+
+double evaluateNode(Differentiator* diff, const TreeNode* node);
 
 
 #endif // DIFF_EVALUATE_H_

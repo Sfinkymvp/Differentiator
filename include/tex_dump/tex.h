@@ -20,10 +20,7 @@ void printPaintedNode(Differentiator* diff, TreeNode* node, TreeNode* color_node
 void printExpression(Differentiator* diff, size_t tree_idx);
 
 
-TreeNode* printAndDifferentiate(Differentiator* diff, TreeNode* node, size_t var_idx);
-
-
-void printTaylorSeries(Differentiator* diff);
+void printPlot(Differentiator* diff, size_t tree_idx);
 
 
 void texInit(Differentiator* diff);

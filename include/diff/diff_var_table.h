@@ -6,6 +6,12 @@
 #include "status.h"
 
 
+void setVariableValue(Differentiator* diff, size_t var_idx, double value);
+
+
+OperationStatus defineVariables(Differentiator* diff);
+
+
 OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* variable, size_t var_len);
 
 

@@ -3,10 +3,14 @@
 #include <string.h>
 #include <assert.h>
 
-
 #include "tree/tree.h"
+
 #include "diff/diff_defs.h"
+
 #include "status.h"
+
+
+static OperationStatus nodeVerify(TreeNode* node);
 
 
 #define OP_INFO_ITEM(ENUM, SYMBOL) {ENUM, #ENUM, SYMBOL}
@@ -46,6 +50,29 @@ const OpInfo OP_TABLE[] = {
 const size_t OP_TABLE_COUNT = sizeof(OP_TABLE) / sizeof(*OP_TABLE);
 
 
+OperationStatus treeVerify(BinaryTree* tree)
+{
+    assert(tree); assert(tree->root);
+
+    OperationStatus status = STATUS_OK;
+    if (tree->root->parent != NULL)
+        return STATUS_TREE_ROOT_HAS_PARENT;
+    if ((tree->root->left == NULL) ^ (tree->root->right == NULL))
+        return STATUS_TREE_INVALID_BRANCH_STRUCTURE;
+
+    if (tree->root->left) {
+        status = nodeVerify(tree->root->left);
+        if (status != STATUS_OK) return status;
+    }
+    if (tree->root->right) {
+        status = nodeVerify(tree->root->right);
+        if (status != STATUS_OK) return status;
+    }
+
+    return STATUS_OK;
+}
+
+
 static OperationStatus nodeVerify(TreeNode* node)
 {
     assert(node);
@@ -60,40 +87,12 @@ static OperationStatus nodeVerify(TreeNode* node)
         return STATUS_OK;
     } else if (node->left != NULL && node->right != NULL) {
         status = nodeVerify(node->left);
-        if (status != STATUS_OK)
-            return status;
+        if (status != STATUS_OK) return status;
         status = nodeVerify(node->right);
-        if (status != STATUS_OK)
-            return status;
+        if (status != STATUS_OK) return status;
         return STATUS_OK;
     }
    
-    return STATUS_OK;
-    //return STATUS_TREE_INVALID_BRANCH_STRUCTURE;
-}
-
-
-OperationStatus treeVerify(BinaryTree* tree)
-{
-    assert(tree); assert(tree->root);
-
-    OperationStatus status = STATUS_OK;
-    if (tree->root->parent != NULL)
-        return STATUS_TREE_ROOT_HAS_PARENT;
-    if ((tree->root->left == NULL) ^ (tree->root->right == NULL))
-        return STATUS_TREE_INVALID_BRANCH_STRUCTURE;
-
-    if (tree->root->left) {
-        status = nodeVerify(tree->root->left);
-        if (status != STATUS_OK)
-            return status;
-    }
-    if (tree->root->right) {
-        status = nodeVerify(tree->root->right);
-        if (status != STATUS_OK)
-            return status;
-    }
-
     return STATUS_OK;
 }
 

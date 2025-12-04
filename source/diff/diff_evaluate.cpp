@@ -17,6 +17,8 @@ typedef struct {
 } OpFuncTable;
 
 
+static double diffOp(Differentiator* diff, const TreeNode* node);
+
 static double evaluateAdd(double left_arg, double right_arg);
 static double evaluateSub(double left_arg, double right_arg);
 static double evaluateMul(double left_arg, double right_arg);
@@ -45,10 +47,8 @@ static double evaluateAcosh(double, double right_arg);
 static double evaluateAtanh(double, double right_arg);
 static double evaluateAcoth(double, double right_arg);
 
-static double diffOp(Differentiator* diff, const TreeNode* node);
 
-
-static OpFuncTable table[] = {
+static const OpFuncTable table[] = {
     {OP_ADD, 2, evaluateAdd},
     {OP_SUB, 2, evaluateSub},
     {OP_MUL, 2, evaluateMul},
@@ -79,6 +79,52 @@ static OpFuncTable table[] = {
 };
 
 
+void diffEvaluate(Differentiator* diff, size_t tree_idx)
+{
+    assert(diff); assert(tree_idx < diff->forest.count);
+    assert(diff->forest.trees[tree_idx].root);
+
+    double value = evaluateNode(diff, diff->forest.trees[diff->forest.count - 1].root);
+    if (!isnan(value)) {
+        printf("Value of %zu derivative: %g\n", tree_idx, value);
+    } else {
+        printf("Value of %zu derivative is not defined\n", tree_idx);
+    }
+};
+
+
+double evaluateNode(Differentiator* diff, const TreeNode* node)
+{
+    assert(diff);
+
+    if (node == NULL) return 0;
+
+    switch (node->type) {
+        case NODE_OP:  return diffOp(diff, node);
+        case NODE_VAR: return diff->var_table.variables[node->value.var_idx].value;
+        case NODE_NUM: return node->value.num_val;
+        default: fprintf(stderr, "Unknown node type!\n"); return 0;
+    }
+}
+
+
+static double diffOp(Differentiator* diff, const TreeNode* node)
+{
+    assert(diff);
+
+    double left_arg  = evaluateNode(diff, node->left);
+    if (isnan(left_arg)) return NAN;
+    double right_arg = evaluateNode(diff, node->right);
+    if (isnan(right_arg)) return NAN;
+
+    if (table[node->value.op].arg_count == 1) {
+        return table[node->value.op].function(NAN, right_arg);
+    } else {
+        return table[node->value.op].function(left_arg, right_arg);
+    }
+}
+
+
 static double evaluateAdd(double left_arg, double right_arg) { return left_arg + right_arg; }
 static double evaluateSub(double left_arg, double right_arg) { return left_arg - right_arg; }
 static double evaluateMul(double left_arg, double right_arg) { return left_arg * right_arg; }
@@ -94,9 +140,21 @@ static double evaluateDiv(double left_arg, double right_arg)
 
 static double evaluatePow(double left_arg, double right_arg)
 {
-    if (left_arg < EPS) {
-        fprintf(stderr, "Incorrect base of power: (%g)^(%g) (must be > 0)!\n", right_arg, left_arg);
-        return NAN;
+    if (fabs(right_arg) < EPS) {
+        return 1;
+    }
+    if (fabs(left_arg) < EPS) {
+        if (right_arg < 0) {
+            fprintf(stderr, "Division by zero: 0^(%g)!\n", right_arg);
+            return NAN;
+        }
+        return 0;
+    }
+    if (left_arg < -EPS) {
+        if (fabs(right_arg - round(right_arg)) >= EPS) {
+            fprintf(stderr, "Incorrect base of power: (%g)^(%g) (must be > 0)!\n", right_arg, left_arg);
+            return NAN;
+        }
     }
     return pow(left_arg, right_arg);
 }
@@ -173,7 +231,7 @@ static double evaluateAcosh(double, double right_arg)
 static double evaluateAtanh(double, double right_arg) 
 {
     if (fabs(right_arg) > 1 - EPS) {
-        fprintf(stderr, "Invalid atanh argument: acosh(%g) (must be > -1 and < 1)!\n", right_arg);
+        fprintf(stderr, "Invalid atanh argument: acosh(%g) (must be > -1 or < 1)!\n", right_arg);
         return NAN;
     }
     return atanh(right_arg);
@@ -181,53 +239,8 @@ static double evaluateAtanh(double, double right_arg)
 static double evaluateAcoth(double, double right_arg) 
 {
     if (fabs(right_arg) < 1 + EPS) {
-        fprintf(stderr, "Invalid acoth argument: acoth(%g) (must be < -1 and > 1)!\n", right_arg);
+        fprintf(stderr, "Invalid acoth argument: acoth(%g) (must be < -1 or > 1)!\n", right_arg);
         return NAN;
     }
     return atanh(1 / right_arg);
 }
-
-
-static double diffOp(Differentiator* diff, const TreeNode* node)
-{
-    assert(diff);
-
-    double left_arg  = evaluateNode(diff, node->left);
-    if (isnan(left_arg)) return NAN;
-    double right_arg = evaluateNode(diff, node->right);
-    if (isnan(right_arg)) return NAN;
-
-    if (table[node->value.op].arg_count == 1)
-        return table[node->value.op].function(NAN, right_arg);
-    else
-        return table[node->value.op].function(left_arg, right_arg);
-}
-
-
-double evaluateNode(Differentiator* diff, const TreeNode* node)
-{
-    assert(diff);
-
-    if (node == NULL)
-        return 0;
-
-    switch (node->type) {
-        case NODE_OP:  return diffOp(diff, node);
-        case NODE_VAR: return diff->var_table.variables[node->value.var_idx].value;
-        case NODE_NUM: return node->value.num_val;
-        default: fprintf(stderr, "Unknown node type!\n"); return 0;
-    }
-}
-
-
-void diffEvaluate(Differentiator* diff, size_t tree_idx)
-{
-    assert(diff); assert(tree_idx < diff->forest.count);
-    assert(diff->forest.trees[tree_idx].root);
-
-    double value = evaluateNode(diff, diff->forest.trees[diff->forest.count - 1].root);
-    if (!isnan(value))
-        printf("Value of %zu derivative: %g\n", tree_idx, value);
-    else 
-        printf("Value of %zu derivative is not defined\n", tree_idx);
-};

@@ -43,9 +43,9 @@ static FoldStatus foldConstants(Differentiator* diff, TreeNode* node, size_t tre
             if ((left_res == FOLD_OPTIMIZED || left_res == FOLD_CONST) &&
                 (right_res == FOLD_OPTIMIZED || right_res == FOLD_CONST)) {
 
-                fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+                fprintf(TEX_FILE, "\\begin{dmath*}\n");
                 printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-                fprintf(diff->tex_dump.file, " = ");
+                fprintf(TEX_FILE, " = ");
 
                 double value = evaluateNode(diff, node);
                 deleteBranch(NL);
@@ -56,7 +56,7 @@ static FoldStatus foldConstants(Differentiator* diff, TreeNode* node, size_t tre
                 node->value.num_val = value;
 
                 printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-                fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
+                fprintf(TEX_FILE, "\n\\end{dmath*}\n\n");
 
                 return FOLD_OPTIMIZED;
             } else {
@@ -97,9 +97,9 @@ static bool setNodeToChild(Differentiator* diff, TreeNode* node, size_t tree_idx
 {
     assert(diff); assert(node);
 
-    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+    fprintf(TEX_FILE, "\\begin{dmath*}\n");
     printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-    fprintf(diff->tex_dump.file, " = ");
+    fprintf(TEX_FILE, " = ");
 
     if (is_left) {
         deleteBranch(NR);
@@ -112,7 +112,7 @@ static bool setNodeToChild(Differentiator* diff, TreeNode* node, size_t tree_idx
     }
     
     printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-    fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
+    fprintf(TEX_FILE, "\n\\end{dmath*}\n\n");
 
     return true;
 }
@@ -122,9 +122,9 @@ static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, 
 {
     assert(diff); assert(node);
 
-    fprintf(diff->tex_dump.file, "\\begin{dmath*}\n");
+    fprintf(TEX_FILE, "\\begin{dmath*}\n");
     printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-    fprintf(diff->tex_dump.file, " = ");
+    fprintf(TEX_FILE, " = ");
 
     deleteBranch(NL);
     NL = NULL;
@@ -134,7 +134,7 @@ static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, 
     node->value.num_val = num;
 
     printPaintedNode(diff, diff->forest.trees[tree_idx].root, node);
-    fprintf(diff->tex_dump.file, "\n\\end{dmath*}\n\n");
+    fprintf(TEX_FILE, "\n\\end{dmath*}\n\n");
 
     return true;
 }
@@ -251,7 +251,7 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
 {
     assert(diff); assert(diff->forest.trees); assert(tree_idx < diff->forest.count);
 
-    fprintf(diff->tex_dump.file, "Начинаем оптимизировать %zu производную:\n", tree_idx);
+    fprintf(TEX_FILE, "\\subsection{Оптимизация}\n");
     bool changed = true;
     while (changed) {
         FoldStatus status = foldConstants(diff, diff->forest.trees[tree_idx].root, tree_idx);
@@ -260,6 +260,7 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
     }  
 
     TREE_DUMP(diff, tree_idx, STATUS_OK, "source tree");
-    fprintf(diff->tex_dump.file, "После оптимизации получаем:\n");
+    fprintf(TEX_FILE, "\\newpage\n");
+    fprintf(TEX_FILE, "\\subsection{Результат оптимизации}\n");
     printExpression(diff, tree_idx);
 }

@@ -230,15 +230,16 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
 
     diff->args.input_file = "../data/test1";
     diff->args.output_file = NULL;
-    diff->args.simple_graph = false;
-    diff->args.derivative_order = 1;
     diff->args.infix_input = false;
-    diff->args.compute_derivative = false;
-    diff->args.taylor_center = 0;
-    diff->args.taylor_decomposition = false;
+    diff->args.derivative_info.order = 1;
+    diff->args.derivative_info.diff_var = 0;
+    diff->args.derivative_info.compute = false;
+    diff->args.taylor_info.decomposition = false;
+    diff->args.taylor_info.center = 0;
+    diff->args.simple_graph = false;
 
     for (int index = 1; index < argc; index++) {
-        if (strcmp(argv[index], "-i") == 0) {
+        if (strcmp(argv[index], "--input") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 diff->args.input_file = argv[index + 1];
                 index++;
@@ -246,40 +247,40 @@ OperationStatus parseArgs(Differentiator* diff, const int argc, const char** arg
                 return STATUS_CLI_UNKNOWN_OPTION;
             }
         }
-        else if (strcmp(argv[index], "-o") == 0) {
+        else if (strcmp(argv[index], "--output") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 diff->args.output_file = argv[index + 1];
                 index++;
             } else {
                 return STATUS_CLI_UNKNOWN_OPTION;
             }
-        } else if (strcmp(argv[index], "-n") == 0) {
+        } else if (strcmp(argv[index], "--order") == 0) {
             if (index + 1 < argc && argv[index + 1][0] != '-') {
                 char* end = NULL;
-                diff->args.derivative_order = strtoull(argv[index + 1], &end, 10);
+                diff->args.derivative_info.order = strtoull(argv[index + 1], &end, 10);
                 if (*end != '\0')
                     return STATUS_CLI_UNKNOWN_OPTION;
                 
                 index++;
             } else
                 return STATUS_CLI_UNKNOWN_OPTION;
-        } else if (strcmp(argv[index], "-t") == 0) {
-            if (index + 1 < argc && argv[index + 1][0] != '-') {
+        } else if (strcmp(argv[index], "--taylor") == 0) {
+            if (index + 1 < argc && (argv[index + 1][1] != '-')) {
                 char* end = NULL;
-                diff->args.taylor_center = strtod(argv[index + 1], &end);
-                diff->args.taylor_decomposition = true;
+                diff->args.taylor_info.center = strtod(argv[index + 1], &end);
+                diff->args.taylor_info.decomposition = true;
                 if (*end != '\0')
                     return STATUS_CLI_UNKNOWN_OPTION;
                 
                 index++;
             } else
                 return STATUS_CLI_UNKNOWN_OPTION;
-        } else if (strcmp(argv[index], "-s") == 0) {
+        } else if (strcmp(argv[index], "--simple_graph") == 0) {
             diff->args.simple_graph = true;
-        } else if (strcmp(argv[index], "-infix") == 0) {
+        } else if (strcmp(argv[index], "--infix") == 0) {
             diff->args.infix_input = true;
-        } else if (strcmp(argv[index], "-c") == 0) {
-            diff->args.compute_derivative = true;
+        } else if (strcmp(argv[index], "--compute") == 0) {
+            diff->args.derivative_info.compute = true;
         } else {
             return STATUS_CLI_UNKNOWN_OPTION;
         }

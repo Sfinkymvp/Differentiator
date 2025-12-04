@@ -7,49 +7,38 @@
 #include "diff/diff.h"
 #include "diff/diff_process.h"
 #include "diff/diff_optimize.h"
+#include "diff/diff_taylor.h"
 
 #include "status.h"
 
 #include "graph_dump/html_builder.h"
 
 #include "tex_dump/tex.h"
+#include "tex_dump/plot_generator.h"
 
 #include "tree/tree.h"
 #include "tree/tree_io.h"
 
 
-static OperationStatus diffForestResize(Differentiator* diff)
-{
-    assert(diff); assert(diff->forest.trees); assert(diff->forest.capacity != 0);
-
-    void* temp_ptr = realloc(diff->forest.trees, 2 * diff->forest.capacity * sizeof(BinaryTree));
-    if (temp_ptr == NULL)
-        return STATUS_SYSTEM_OUT_OF_MEMORY;
-
-    diff->forest.trees = (BinaryTree*)temp_ptr;
-    diff->forest.capacity *= 2;
-
-    return STATUS_OK;  
-}
+static OperationStatus diffForestResize(Differentiator* diff);
 
 
 OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
 {
     assert(diff); assert(diff->forest.trees); 
 
-    if (diff->forest.count == diff->forest.capacity)
+    if (diff->forest.count >= diff->forest.capacity - 1)
         diffForestResize(diff);
     assert(diff->forest.count < diff->forest.capacity);
 
-    fprintf(diff->tex_dump.file, "Начинаем вычислять %zu производную функции:\n", diff->forest.count);
-
+    fprintf(TEX_FILE, "\n\\subsection{Вычисление}\n");
     TREE_CREATE(&diff->forest.trees[diff->forest.count], "create diff tree");
     diff->forest.trees[diff->forest.count].root = diffNode(diff,
         diff->forest.trees[diff->forest.count - 1].root, var_idx);
     if (!diff->forest.trees[diff->forest.count].root)
         return STATUS_DIFF_CALCULATE_ERROR;
 
-    fprintf(diff->tex_dump.file, "\nПосле дифференцирования:\n");
+    fprintf(TEX_FILE, "\n\\subsection{Результат вычисления}\n");
     printExpression(diff, diff->forest.count);
     diff->forest.count++;
 
@@ -59,36 +48,19 @@ OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
 }
 
 
-void diffTaylorSeries(Differentiator* diff)
+static OperationStatus diffForestResize(Differentiator* diff)
 {
-    assert(diff); assert(diff->forest.trees);
+    assert(diff); assert(diff->forest.trees); assert(diff->forest.capacity != 0);
 
-    fprintf(diff->tex_dump.file, "\\chapter{Разложение функции по формуле Тейлора}");
-    fprintf(diff->tex_dump.file, "Напомню, что наша функция выглядит следующим образом:\n");
-    printExpression(diff, 0);
-    diff->var_table.variables[0].value = diff->args.taylor_center;
+    void* temp_ptr = realloc(diff->forest.trees, 2 * diff->forest.capacity * sizeof(BinaryTree));
+    printf("capacity: %zu, count: %zu\n", diff->forest.capacity, diff->forest.count);
+    if (temp_ptr == NULL)
+        return STATUS_SYSTEM_OUT_OF_MEMORY;
 
-    fprintf(diff->tex_dump.file, "Разложим его по формуле Тейлора с остаточным членом в форме Пеано:\n");
-    printTaylorSeries(diff);
-}
+    diff->forest.trees = (BinaryTree*)temp_ptr;
+    diff->forest.capacity *= 2;
 
-
-
-
-
-OperationStatus defineVariables(Differentiator* diff)
-{
-    assert(diff); assert(diff->var_table.variables);
-
-    for (size_t index = 0; index < diff->var_table.count; index++) {
-        printf("Value of variable '%s': ", diff->var_table.variables[index].name);
-        if (scanf("%lf", &diff->var_table.variables[index].value) != 1) {
-            fprintf(stderr, "Error: variable %s not defined\n", diff->var_table.variables[index].name);
-            return STATUS_IO_INVALID_USER_INPUT;
-        }
-    }
-
-    return STATUS_OK;
+    return STATUS_OK;  
 }
 
 
