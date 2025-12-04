@@ -15,81 +15,88 @@
 #include "status.h"
 
 
-static size_t getFileSize(FILE* input_file)
-{
-    assert(input_file != NULL);
+static OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file);
+static OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file);
 
-    struct stat buf = {};
+static OperationStatus parseNode(TreeNode** node, Differentiator* diff,
+    char* src_code, int* position);
+static OperationStatus readNode(TreeNode** node, Differentiator* diff,
+    char* src_code, int* position);
+static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
+    char* src_code, int* position);
 
-    if (fstat(fileno(input_file), &buf) == -1)
-        return 0;
-
-    return (size_t)buf.st_size;
-}
+static OpType getOpType(const char* buffer);
+static inline void skipWhitespaces(char* src_code, int* position);
+static size_t getFileSize(FILE* input_file);
 
 
 OperationStatus diffLoadExpression(Differentiator* diff)
 {
     assert(diff); assert(diff->forest.trees); assert(diff->args.input_file);
 
-    OperationStatus status = TREE_CREATE(&diff->forest.trees[0], "");
+    OperationStatus status = TREE_CREATE(&diff->forest.trees[0], "Creating a source expression tree");
     RETURN_IF_STATUS_NOT_OK(status);
 
     FILE* input_file = fopen(diff->args.input_file, "r");
-    if (input_file == NULL)
+    if (input_file == NULL) {
         return STATUS_IO_FILE_OPEN_ERROR;
+    }
 
-    if (diff->args.infix_input)
+    if (diff->args.infix_input) {
         status = treeInfixLoad(diff, 0, input_file);
-    else 
+    } else {
         status = treePrefixLoad(diff, 0, input_file);
-    if (fclose(input_file) != 0 && status == STATUS_OK)
+    }
+    if (fclose(input_file) != 0 && status == STATUS_OK) {
         status = STATUS_IO_FILE_CLOSE_ERROR;
+    }
 
     diff->forest.count++;    
     return status;
 }
 
 
-OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
+static OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
 {
     assert(diff); assert(tree_idx < diff->forest.capacity); assert(input_file);
  
     size_t file_size = getFileSize(input_file);
-    if (file_size == 0)
+    if (file_size == 0) {
         return STATUS_IO_FILE_EMPTY;
+    }
 
     char* src_code = (char*)calloc(file_size + 1, 1);
     if (src_code == NULL) {
-        fclose(input_file);
         return STATUS_SYSTEM_OUT_OF_MEMORY;
     }
 
     size_t read_size = fread(src_code, 1, file_size, input_file);
-    if (read_size != file_size)
+    if (read_size != file_size) {
         return STATUS_IO_FILE_READ_ERROR;
+    }
 
     char* buffer = src_code;
     diff->forest.trees[tree_idx].root = getTree(diff, &buffer);
     free(src_code);
-    if (diff->forest.trees[tree_idx].root == NULL)
+    if (diff->forest.trees[tree_idx].root == NULL) {
         return STATUS_IO_FILE_READ_ERROR;
+    }
 
     return STATUS_OK;
 }
 
 
-OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
+static OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* input_file)
 {
     assert(diff); assert(diff->forest.trees); assert(input_file);
     
     size_t file_size = getFileSize(input_file);
-    if (file_size == 0)
+    if (file_size == 0) {
         return STATUS_IO_FILE_EMPTY;
+    }
 
     char* src_code = (char*)calloc(file_size + 1, 1);
     if (src_code == NULL) {
-        fclose(input_file);
         return STATUS_SYSTEM_OUT_OF_MEMORY;
     }
 
@@ -108,70 +115,8 @@ OperationStatus treePrefixLoad(Differentiator* diff, size_t tree_idx, FILE* inpu
 }
 
 
-static OpType getOpType(const char* buffer)
-{
-    assert(buffer);
-
-    for (int index = 0; OP_TABLE[index].op != OP_NONE; index++) {
-        if (strcmp(buffer, OP_TABLE[index].symbol) == 0)
-            return OP_TABLE[index].op;
-    }
-
-    return OP_NONE;
-}
-
-
-OperationStatus readTitle(TreeNode* node, Differentiator* diff,
-                          char* src_code, int* position)
-{
-    assert(node); ; assert(diff); assert(diff->var_table.variables); 
-    assert(src_code); assert(position);
-
-    char buffer[BUFFER_SIZE] = {};
-    int read_count = 0;
-    int result = sscanf(&src_code[*position], "%s%n", buffer, &read_count);
-    *position += read_count;
-    if (result != 1)
-        return STATUS_IO_FILE_READ_ERROR;
-
-    OpType optype = getOpType(buffer);
-    if (optype != OP_NONE) {
-        node->type = NODE_OP;
-        node->value.op = optype;
-        return STATUS_OK;
-    }
-
-    char* endptr = NULL;
-    double value = strtod(buffer, &endptr);
-    assert(endptr);
-    OperationStatus status = STATUS_OK;
-    if (*endptr == '\0') {
-        node->type = NODE_NUM;
-        node->value.num_val = value;
-        status = STATUS_OK;
-    } else if (endptr == buffer) {
-        node->type = NODE_VAR;
-        status = addVariable(diff, &node->value.var_idx, buffer, strlen(buffer));
-    } else {
-        status = STATUS_PARSER_INVALID_IDENTIFIER;
-    }
-
-    return status;
-}
-
-
-static inline void skipWhitespaces(char* src_code, int* position)
-{
-    assert(src_code); assert(position);
-
-    while (src_code[*position] == ' '  || src_code[*position] == '\t' ||
-           src_code[*position] == '\n' || src_code[*position] == '\r')
-        (*position)++;
-}
-
-
 static OperationStatus parseNode(TreeNode** node, Differentiator* diff,
-                                 char* src_code, int* position)
+    char* src_code, int* position)
 {
     assert(node); ; assert(diff); assert(diff->var_table.variables); 
     assert(src_code); assert(position);
@@ -204,8 +149,8 @@ static OperationStatus parseNode(TreeNode** node, Differentiator* diff,
 }
 
 
-OperationStatus readNode(TreeNode** node, Differentiator* diff,
-                         char* src_code, int* position)
+static OperationStatus readNode(TreeNode** node, Differentiator* diff,
+    char* src_code, int* position)
 {
     assert(node); ; assert(diff); assert(diff->var_table.variables); 
     assert(src_code); assert(position);
@@ -224,67 +169,79 @@ OperationStatus readNode(TreeNode** node, Differentiator* diff,
 }
 
 
-OperationStatus parseArgs(Differentiator* diff, const int argc, const char** argv)
+static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
+    char* src_code, int* position)
 {
-    assert(diff); assert(argv);
+    assert(node); ; assert(diff); assert(diff->var_table.variables); 
+    assert(src_code); assert(position);
 
-    diff->args.input_file = "../data/test1";
-    diff->args.output_file = NULL;
-    diff->args.infix_input = false;
-    diff->args.derivative_info.order = 1;
-    diff->args.derivative_info.diff_var = 0;
-    diff->args.derivative_info.compute = false;
-    diff->args.taylor_info.decomposition = false;
-    diff->args.taylor_info.center = 0;
-    diff->args.simple_graph = false;
+    char buffer[BUFFER_SIZE] = {};
+    int read_count = 0;
+    int result = sscanf(&src_code[*position], "%s%n", buffer, &read_count);
+    *position += read_count;
+    if (result != 1) {
+        return STATUS_IO_FILE_READ_ERROR;
+    }
 
-    for (int index = 1; index < argc; index++) {
-        if (strcmp(argv[index], "--input") == 0) {
-            if (index + 1 < argc && argv[index + 1][0] != '-') {
-                diff->args.input_file = argv[index + 1];
-                index++;
-            } else {
-                return STATUS_CLI_UNKNOWN_OPTION;
-            }
-        }
-        else if (strcmp(argv[index], "--output") == 0) {
-            if (index + 1 < argc && argv[index + 1][0] != '-') {
-                diff->args.output_file = argv[index + 1];
-                index++;
-            } else {
-                return STATUS_CLI_UNKNOWN_OPTION;
-            }
-        } else if (strcmp(argv[index], "--order") == 0) {
-            if (index + 1 < argc && argv[index + 1][0] != '-') {
-                char* end = NULL;
-                diff->args.derivative_info.order = strtoull(argv[index + 1], &end, 10);
-                if (*end != '\0')
-                    return STATUS_CLI_UNKNOWN_OPTION;
-                
-                index++;
-            } else
-                return STATUS_CLI_UNKNOWN_OPTION;
-        } else if (strcmp(argv[index], "--taylor") == 0) {
-            if (index + 1 < argc && (argv[index + 1][1] != '-')) {
-                char* end = NULL;
-                diff->args.taylor_info.center = strtod(argv[index + 1], &end);
-                diff->args.taylor_info.decomposition = true;
-                if (*end != '\0')
-                    return STATUS_CLI_UNKNOWN_OPTION;
-                
-                index++;
-            } else
-                return STATUS_CLI_UNKNOWN_OPTION;
-        } else if (strcmp(argv[index], "--simple_graph") == 0) {
-            diff->args.simple_graph = true;
-        } else if (strcmp(argv[index], "--infix") == 0) {
-            diff->args.infix_input = true;
-        } else if (strcmp(argv[index], "--compute") == 0) {
-            diff->args.derivative_info.compute = true;
-        } else {
-            return STATUS_CLI_UNKNOWN_OPTION;
+    OpType optype = getOpType(buffer);
+    if (optype != OP_NONE) {
+        node->type = NODE_OP;
+        node->value.op = optype;
+        return STATUS_OK;
+    }
+
+    char* endptr = NULL;
+    double value = strtod(buffer, &endptr);
+    assert(endptr);
+    OperationStatus status = STATUS_OK;
+    if (*endptr == '\0') {
+        node->type = NODE_NUM;
+        node->value.num_val = value;
+        status = STATUS_OK;
+    } else if (endptr == buffer) {
+        node->type = NODE_VAR;
+        status = addVariable(diff, &node->value.var_idx, buffer, strlen(buffer));
+    } else {
+        status = STATUS_PARSER_INVALID_IDENTIFIER;
+    }
+
+    return status;
+}
+
+
+static OpType getOpType(const char* buffer)
+{
+    assert(buffer);
+
+    for (int index = 0; OP_TABLE[index].op != OP_NONE; index++) {
+        if (strcmp(buffer, OP_TABLE[index].symbol) == 0) {
+            return OP_TABLE[index].op;
         }
     }
 
-    return STATUS_OK;
+    return OP_NONE;
 }
+
+
+static inline void skipWhitespaces(char* src_code, int* position)
+{
+    assert(src_code); assert(position);
+
+    while (src_code[*position] == ' '  || src_code[*position] == '\t' ||
+        src_code[*position] == '\n' || src_code[*position] == '\r') {
+        (*position)++;
+    }
+}
+
+
+static size_t getFileSize(FILE* input_file)
+{
+    assert(input_file != NULL);
+
+    struct stat buf = {};
+    if (fstat(fileno(input_file), &buf) == -1)
+        return 0;
+
+    return (size_t)buf.st_size;
+}
+

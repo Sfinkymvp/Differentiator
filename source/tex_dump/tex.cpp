@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include "tex_dump/tex.h"
 #include "tex_dump/plot_generator.h"
@@ -25,46 +26,12 @@ void printOperator(Differentiator* diff, TreeNode* node)
     assert(node->right);
 
     switch (node->value.op) {
-        case OP_ADD:
-            fprintf(TEX_FILE, "(");
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, " + ");
-            printNode(diff, node->right);
-            fprintf(TEX_FILE, ")");
-            break;
-        case OP_SUB:
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, " - ");
-            printNode(diff, node->right);
-            break;
-        case OP_MUL:
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, " \\cdot ");
-            printNode(diff, node->right);
-            break;
-        case OP_DIV:
-            fprintf(TEX_FILE, " \\frac{");
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, "}{");
-            printNode(diff, node->right);
-            fprintf(TEX_FILE, "} ");
-            break;
-        
-        case OP_POW:
-            fprintf(TEX_FILE, "\\left( ");
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, "\\right) ^{");
-            printNode(diff, node->right);
-            fprintf(TEX_FILE, "} ");
-            break;
-        case OP_LOG:
-            fprintf(TEX_FILE, "\\log_{");
-            printNode(diff, node->left);
-            fprintf(TEX_FILE, "}{");
-            printNode(diff, node->right);
-            fprintf(TEX_FILE, "} ");
-            break;
-        
+        case OP_ADD: printTex(diff, "%n + %n", node->left, node->right); break;
+        case OP_SUB: printTex(diff, "%n - %n", node->left, node->right); break;
+        case OP_MUL: printTex(diff, "%n \\cdot %n", node->left, node->right); break;
+        case OP_DIV: printTex(diff, "\\frac{%n}{%n}", node->left, node->right); break;
+        case OP_POW: printTex(diff, "%n^{%n}", node->left, node->right); break;
+        case OP_LOG: printTex(diff, "\\log_{%n}{%n}", node->left, node->right); break;
         case OP_SIN:
             fprintf(TEX_FILE, "\\sin{");
             printNode(diff, node->right);
@@ -424,6 +391,39 @@ void texClose(Differentiator* diff)
     char command[BUFFER_SIZE * 2] = {};
     snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s > /dev/null", diff->tex_dump.filename);
     system(command);
+}
+
+
+void printTex(Differentiator* diff, const char* format, ...)
+{
+    assert(diff); assert(format);
+
+    va_list args = {};
+    va_start(args, format);
+
+    const char* left_spec_ptr = strchr(format, '%');
+    if (left_spec_ptr == NULL) {
+        fprintf(TEX_FILE, "%s", format);
+        return;
+    }
+    fprintf(TEX_FILE, "%.*s", (int)(left_spec_ptr - format), format);
+
+    const char* right_spec_ptr = strchr(left_spec_ptr + 1, '%');
+    while (right_spec_ptr) {
+        TreeNode* node = va_arg(args, TreeNode*);
+        assert(node);
+
+        printNode(diff, node);
+        fprintf(TEX_FILE, "%.*s", (int)(right_spec_ptr - left_spec_ptr - 2), left_spec_ptr + 2);
+
+        const char* temp = strchr(right_spec_ptr + 1, '%');
+        left_spec_ptr = right_spec_ptr;
+        right_spec_ptr = temp;
+    }
+
+    printNode(diff, va_arg(args, TreeNode*));
+    fprintf(TEX_FILE, "%s", left_spec_ptr + 2);
+    va_end(args);
 }
 
 

@@ -4,75 +4,63 @@
 #include <string.h>
 #include <assert.h>
 
-
 #include "graph_dump/html_builder.h"
 #include "graph_dump/graph_generator.h"
-#include "graph_dump/graph_defs.h"
+
 #include "diff/diff_defs.h"
+
 #include "tree/tree.h"
+
+
+#define GRAPH_FILE diff->graph_dump.file
+#define DIRECTORY  diff->graph_dump.directory
 
 
 static const char* GRAPH_DUMP_DIRECTORY = "images";
 
 
-static void convertDotToSvg(const char* dot_file, const char* svg_file)
+typedef struct {
+    OperationStatus status;
+    const char* message;
+    const char* file;
+    const char* function;
+    int line;
+} DumpInfo;
+
+
+static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* info, const char* image);
+static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info);
+static void convertDotToSvg(const char* dot_file, const char* svg_file);
+
+
+void openGraphDumpFile(Differentiator* diff)
 {
-    assert(dot_file);
-    assert(svg_file);
+    assert(diff);
 
-    char command[BUFFER_SIZE] = {};
-    snprintf(command, BUFFER_SIZE, "dot -Tsvg %s -o %s",
-             dot_file, svg_file);
+    static int dump_counter = 1; 
+    snprintf(DIRECTORY, BUFFER_SIZE, "%s/tree_dump_%03d",
+        GRAPH_DUMP_DIRECTORY, dump_counter);
 
+    char command[BUFFER_SIZE * 3] = {};
+    snprintf(command, BUFFER_SIZE * 3, "rm -rf %s && mkdir -p %s",
+             DIRECTORY, DIRECTORY);
     system(command);
-}
 
+    char filename[BUFFER_SIZE * 2] = {};
+    snprintf(filename, BUFFER_SIZE * 2, "%s/tree_dump_%03d.html",
+             DIRECTORY, dump_counter);
 
-static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info)
-{
-    assert(diff); assert(diff->forest.trees); assert(tree); /*assert(tree->identifier);*/
-    assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
-    assert(info); assert(info->message); assert(info->file); assert(info->function); 
-
-    fprintf(diff->graph_dump.file, "\t<h1>TREE DUMP #%03d</h1>\n", diff->graph_dump.image_counter);
-    fprintf(diff->graph_dump.file, "\t<h2>Dump {%s:%d} called from %s()</h2>\n",
-            info->file, info->line, info->function);
-    fprintf(diff->graph_dump.file, "\t<h2>Tree \"%s\" {%s:%d} created in %s()</h2>\n",
-            tree->origin.name, tree->origin.file,
-            tree->origin.line, tree->origin.function);
-    fprintf(diff->graph_dump.file, "\t<h3>STATUS:   NONE</h3>\n");
-    fprintf(diff->graph_dump.file, "\t<h3>MESSAGE: %s</h3>\n", info->message);
-}
-
-
-static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* info, const char* image)
-{
-    assert(diff); assert(tree); assert(info); assert(info); assert(image);
-
-    fprintf(diff->graph_dump.file, "<html>\n");
-    fprintf(diff->graph_dump.file, "<style>\n");
-    fprintf(diff->graph_dump.file, "body {font-family: monospace;}\n");
-    fprintf(diff->graph_dump.file, "</style>\n");
-    fprintf(diff->graph_dump.file, "<body>\n");
-
-    writeTreeInfo(diff, tree, info);
-
-    fprintf(diff->graph_dump.file, "<div style=\"overflow-x: auto; white-space: nowrap;\">\n");
-    fprintf(diff->graph_dump.file, "<img src=\"tree_graph_%03d.svg\" "
-            "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
-            diff->graph_dump.image_counter);
-    fprintf(diff->graph_dump.file, "</div>\n");
-
-    fprintf(diff->graph_dump.file, "<hr style=\"margin: 40px 0; border: 2px solid #ccc;\">\n");
-    fprintf(diff->graph_dump.file, "</body>\n");
-    fprintf(diff->graph_dump.file, "</html>\n");
+    GRAPH_FILE = fopen(filename, "w");
+    assert(GRAPH_FILE);
+    dump_counter++;
 }
 
 
 void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, const char* file, 
               const char* function, int line, const char* format, ...)
 {
-    assert(diff); assert(diff->graph_dump.file); 
+    assert(diff); assert(GRAPH_FILE); assert(diff->var_table.variables);
+    assert(diff->forest.trees); assert(tree_idx <= diff->forest.count);
     assert(file); assert(function); assert(format);
 
     char message[BUFFER_SIZE] = {};
@@ -88,9 +76,9 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
     char graph_svg_file[BUFFER_SIZE * 2] = {};
 
     snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.dot",
-             diff->graph_dump.directory, diff->graph_dump.image_counter);
+             DIRECTORY, diff->graph_dump.image_counter);
     snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.svg",
-             diff->graph_dump.directory, diff->graph_dump.image_counter);
+             DIRECTORY, diff->graph_dump.image_counter);
 
     generateGraph(diff, tree_idx, graph_dot_file);
     convertDotToSvg(graph_dot_file, graph_svg_file);
@@ -105,26 +93,55 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
 }
 
 
-void openGraphDumpFile(Differentiator* diff)
+static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* info, const char* image)
 {
-    assert(diff);
+    assert(diff); assert(tree); assert(info); assert(info); assert(image);
 
-    static int dump_counter = 1; 
+    fprintf(GRAPH_FILE, "<html>\n");
+    fprintf(GRAPH_FILE, "<style>\n");
+    fprintf(GRAPH_FILE, "body {font-family: monospace;}\n");
+    fprintf(GRAPH_FILE, "</style>\n");
+    fprintf(GRAPH_FILE, "<body>\n");
 
-    snprintf(diff->graph_dump.directory, BUFFER_SIZE, "%s/tree_dump_%03d",
-             GRAPH_DUMP_DIRECTORY, dump_counter);
+    writeTreeInfo(diff, tree, info);
 
-    char command[BUFFER_SIZE * 3] = {};
-    snprintf(command, BUFFER_SIZE * 3, "rm -rf %s && mkdir -p %s",
-             diff->graph_dump.directory, diff->graph_dump.directory);
+    fprintf(GRAPH_FILE, "<div style=\"overflow-x: auto; white-space: nowrap;\">\n");
+    fprintf(GRAPH_FILE, "<img src=\"tree_graph_%03d.svg\" "
+        "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
+        diff->graph_dump.image_counter);
+    fprintf(GRAPH_FILE, "</div>\n");
+
+    fprintf(GRAPH_FILE, "<hr style=\"margin: 40px 0; border: 2px solid #ccc;\">\n");
+    fprintf(GRAPH_FILE, "</body>\n");
+    fprintf(GRAPH_FILE, "</html>\n");
+}
+
+
+static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info)
+{
+    assert(diff); assert(diff->forest.trees); assert(tree);
+    assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
+    assert(info); assert(info->message); assert(info->file); assert(info->function); 
+
+    fprintf(GRAPH_FILE, "\t<h1>TREE DUMP #%03d</h1>\n", diff->graph_dump.image_counter);
+    fprintf(GRAPH_FILE, "\t<h2>Dump {%s:%d} called from %s()</h2>\n",
+        info->file, info->line, info->function);
+    fprintf(GRAPH_FILE, "\t<h2>Tree \"%s\" {%s:%d} created in %s()</h2>\n",
+        tree->origin.name, tree->origin.file,
+        tree->origin.line, tree->origin.function);
+    fprintf(GRAPH_FILE, "\t<h3>STATUS:   NONE</h3>\n");
+    fprintf(GRAPH_FILE, "\t<h3>MESSAGE: %s</h3>\n", info->message);
+}
+
+
+static void convertDotToSvg(const char* dot_file, const char* svg_file)
+{
+    assert(dot_file);
+    assert(svg_file);
+
+    char command[BUFFER_SIZE] = {};
+    snprintf(command, BUFFER_SIZE, "dot -Tsvg %s -o %s",
+             dot_file, svg_file);
+
     system(command);
-
-    char filename[BUFFER_SIZE * 2] = {};
-    snprintf(filename, BUFFER_SIZE * 2, "%s/tree_dump_%03d.html",
-             diff->graph_dump.directory, dump_counter);
-
-    diff->graph_dump.file = fopen(filename, "w");
-    assert(diff->graph_dump.file);
-
-    dump_counter++;
 }

@@ -9,6 +9,9 @@
 void setVariableValue(Differentiator* diff, size_t var_idx, double value);
 
 
+OperationStatus defineDiffVariable(Differentiator* diff);
+
+
 OperationStatus defineVariables(Differentiator* diff);
 
 

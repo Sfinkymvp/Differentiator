@@ -58,15 +58,15 @@ OperationStatus generatePlot(Differentiator* diff, TreeNode* root, char* output_
         return status;
     }
 
-    char command[BUFFER_SIZE] = "";
-    snprintf(command, BUFFER_SIZE * 2, "gnuplot %s", script_filename);
+    char command[BUFFER_SIZE * 3] = "";
+    snprintf(command, BUFFER_SIZE * 3, "gnuplot %s", script_filename);
     printf("gnuplot compile %s\n", script_filename);
 
     int result = system(command);
     if (result != 0) {
         fprintf(stderr, "Gnuplot didn't run successful!\n");
     }
-    //snprintf(command, BUFFER_SIZE, "rm %s && rm %s", data_filename, script_filename);
+    snprintf(command, BUFFER_SIZE * 3, "rm %s && rm %s", data_filename, script_filename);
     result = system(command);
     if (result != 0) {
         fprintf(stderr, "Failed to remove gnuplot files!\n");
@@ -112,7 +112,7 @@ static OperationStatus generatePlotData(Differentiator* diff, TreeNode* root,
     if (data_file == NULL) return STATUS_IO_FILE_OPEN_ERROR;
 
     for (double x = -5; x <= 5; x += 0.05) {
-        setVariableValue(diff, diff->args.derivative_info.diff_var, x);
+        setVariableValue(diff, diff->args.derivative_info.diff_var_idx, x);
         double y = evaluateNode(diff, root);
         if (!isnan(y)) {
             fprintf(data_file, "%f %f\n", x, y);
@@ -163,7 +163,7 @@ static OperationStatus generateTaylorPlotData(Differentiator* diff, TreeNode* ro
     if (data_file == NULL) return STATUS_IO_FILE_OPEN_ERROR;
 
     for (double x = -5; x <= 5; x += 0.05) {
-        setVariableValue(diff, diff->args.derivative_info.diff_var, x);
+        setVariableValue(diff, diff->args.derivative_info.diff_var_idx, x);
         double y = evaluateNode(diff, root);
         if (!isnan(y)) {
             fprintf(data_file, "%f %f\n", x, y);

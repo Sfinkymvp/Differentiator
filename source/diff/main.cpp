@@ -31,7 +31,7 @@ int main(const int argc, const char** argv)
     if (status == STATUS_OK)
         printIntroduction(&diff);
 
-    printf("diff var value: %g\n", diff.var_table.variables[diff.args.derivative_info.diff_var].value);
+    printf("diff var value: %g\n", diff.var_table.variables[diff.args.derivative_info.diff_var_idx].value);
     printf("taylor center value: %g\n", diff.args.taylor_info.center);
     TREE_DUMP(&diff, 0, status, "source tree");
     if (status == STATUS_OK && diff.args.derivative_info.compute) {

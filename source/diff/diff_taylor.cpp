@@ -28,7 +28,7 @@ static double factorial(size_t n);
     size_t tree_idx = diff->forest.count;
     TREE_CREATE(&diff->forest.trees[tree_idx], "creating taylor tree");
 
-    setVariableValue(diff, diff->args.derivative_info.diff_var, diff->args.taylor_info.center);
+    setVariableValue(diff, diff->args.derivative_info.diff_var_idx, diff->args.taylor_info.center);
     diff->forest.trees[tree_idx].root = createTaylorTree(diff, 0);
     assert(diff->forest.trees[tree_idx].root);
     TREE_DUMP(diff, tree_idx, STATUS_OK, "creating taylor tree");
@@ -37,7 +37,7 @@ static double factorial(size_t n);
     fprintf(TEX_FILE, "Напомню, что наша функция выглядит следующим образом:\n");
     printExpression(diff, 0);
     fprintf(TEX_FILE, "Разложим функцию по формуле Тейлора с остаточным членом в форме Пеано\n");
-    printTaylorTree(diff, diff->forest.trees[tree_idx].root);
+    printExpression(diff, tree_idx);
 
     char output_file[BUFFER_SIZE] = "";
     snprintf(output_file, BUFFER_SIZE, "%s/%s_%03zu", GNUPLOT_IMAGES_DIRECTORY,
@@ -72,7 +72,7 @@ TreeNode* createTaylorTree(Differentiator* diff, size_t derivative_counter)
         return next_derivative;
     }
     TreeNode* current_derivative = MUL(CNUM(fabs(derivative_value)),
-                                       POW(SUB(CVAR(diff->args.derivative_info.diff_var),
+                                       POW(SUB(CVAR(diff->args.derivative_info.diff_var_idx),
                                                CNUM(diff->args.taylor_info.center)),
                                            CNUM((double)derivative_counter)));
 
@@ -89,62 +89,4 @@ static double factorial(size_t number)
         result *= (double)index;
 
     return result;
-}
-
-
-void printTaylorTree(Differentiator* diff, TreeNode* taylor_root)
-{
-    assert(diff); assert(TEX_FILE); assert(taylor_root);
-
-    TreeNode* head_node = NULL;
-    TreeNode* mul_node = NULL;
-    TreeNode* pow_node = NULL;
-    TreeNode* sub_node = NULL;
-
-    fprintf(TEX_FILE, "\\begin{dmath*}\n");
-    for (head_node = taylor_root; head_node->type == NODE_OP; head_node = head_node->right) {
-        mul_node = head_node->left;
-        assert(mul_node); assert(mul_node->left); assert(mul_node->right);
-
-        if (head_node != taylor_root) {
-            if (mul_node->left->value.num_val < 0) {
-                fprintf(TEX_FILE, " - ");
-            } else {
-                fprintf(TEX_FILE, " + ");
-            }
-        }
-        fprintf(TEX_FILE, "%g", fabs(mul_node->left->value.num_val));
- 
-        pow_node = mul_node->right;
-        assert(pow_node); assert(pow_node->left); assert(pow_node->right);
-        sub_node = pow_node->left;
-        assert(sub_node); assert(sub_node->left); assert(sub_node->right);
-
-        if (fabs(diff->args.taylor_info.center) < EPS) {
-            fprintf(TEX_FILE, "%s^%g",
-                diff->var_table.variables[diff->args.derivative_info.diff_var].name, pow_node->right->value.num_val);
-        } else {
-            fprintf(TEX_FILE, "(%s", diff->var_table.variables[diff->args.derivative_info.diff_var].name);
-            if (sub_node->right->value.num_val >= 0) {
-                fprintf(TEX_FILE, " - %g)^%g", fabs(sub_node->right->value.num_val), pow_node->right->value.num_val);
-            } else {
-                fprintf(TEX_FILE, " + %g)^%g", fabs(sub_node->right->value.num_val), pow_node->right->value.num_val);
-            }
-        }
-        
-    }
-
-    if (fabs(diff->args.taylor_info.center) < EPS) {
-        fprintf(TEX_FILE, " + o(%s^%g)\n",
-            diff->var_table.variables[diff->args.derivative_info.diff_var].name, pow_node->right->value.num_val);
-    } else {
-        fprintf(TEX_FILE, " + o(%s", diff->var_table.variables[diff->args.derivative_info.diff_var].name);
-        if (sub_node->right->value.num_val >= 0) {
-            fprintf(TEX_FILE, " - %g)^%g\n", fabs(sub_node->right->value.num_val), pow_node->right->value.num_val);
-        } else {
-            fprintf(TEX_FILE, " + %g)^%g\n", fabs(sub_node->right->value.num_val), pow_node->right->value.num_val);
-        }
-    }
- 
-    fprintf(TEX_FILE, "\n\\end{dmath*}\n");
 }

@@ -29,10 +29,6 @@
 
 static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx);
 
-static TreeNode* diffPow(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx);
-
-static TreeNode* diffLog(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx);
-
 static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node);
 
 static TreeNode* copyNode(const TreeNode* node);
@@ -103,10 +99,28 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
 
             return DIV(SUB(MUL(dNL, cNR), MUL(cNL, dNR)), POW(cNR, CNUM(2)));
         }
+        case OP_POW: {
+            /*printDerivativeExpression(diff, left->parent);
+            PR("\\left(\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
+            printNode(diff, left); PR("\\right) + \\frac{\\left("); printNode(diff, right);
+            PR("\\right) \\cdot \\left("); printNode(diff, left); PR("\\right)'}{");
+            printNode(diff, left); PR("}\\right) \\cdot"); PR("\\left(");
+            printNode(diff, left); PR("\\right)^{"); printNode(diff, right);
+            PR("}\n"); PR("\\end{dmath*}\n");*/
 
-        case OP_POW:   return diffPow(diff, NL, NR, var_idx);
-        case OP_LOG:   return diffLog(diff, NL, NR, var_idx);
+            return MUL(ADD(MUL(dNR, LOG(CNUM(M_E), cNL)), MUL(DIV(cNR, cNL), dNL)), POW(cNL, cNR));
+        }
+        case OP_LOG: {
+            /*printDerivativeExpression(diff, left->parent);
+            PR("\\frac{\\frac{\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
+            printNode(diff, left); PR("\\right)}{"); printNode(diff, right);
+            PR("} - \\frac{\\left("); printNode(diff, left); PR("\\right)' \\cdot \\ln\\left(");
+            printNode(diff, right); PR("\\right)}{\\left("); printNode(diff, left);
+            PR("\\right)}}{\\ln\\left("); printNode(diff, left); PR("\\right)^2}\n");
+            PR("\\end{dmath*}\n");*/
 
+            return DIV(SUB(DIV(MUL(dNR, LOG(CNUM(M_E), cNL)), cNR), DIV(MUL(dNL, LOG(CNUM(M_E), cNR)), cNL)), POW(LOG(CNUM(M_E), cNL), CNUM(2)));
+        }
         case OP_SIN:   return MUL(COS(cNR), dNR);
         case OP_COS:   return MUL(MUL(CNUM(-1), SIN(cNR)), dNR);
         case OP_TAN:   return DIV(dNR, POW(COS(cNR), CNUM(2)));
@@ -130,90 +144,6 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
         case OP_NONE:  fprintf(stderr, "Operation 'NONE' detected\n"); return NULL;
         default:       fprintf(stderr, "Unknown operation\n"); return NULL;
     }
-}
-
-
-static TreeNode* diffPow(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx)
-{
-    assert(diff); assert(left); assert(right); assert(left->parent);
-
-    if (!left || !right)
-        return NULL;
-
-    bool left_contains = containsVariable(left, var_idx);
-    bool right_contains = containsVariable(right, var_idx);
-
-    printDerivativeExpression(diff, left->parent);
-
-    if (!left_contains && !right_contains) {
-        PR("0\n"); PR("\\end{dmath*}\n");
-        return CNUM(0);
-    } else if (left_contains && !right_contains) {
-        PR("\\left("); printNode(diff, right); PR("\\right) \\cdot \\left(");
-        printNode(diff, left); PR("\\right)^{"); printNode(diff, right);
-        PR(" - 1} \\cdot "); PR("\\left("); printNode(diff, left);
-        PR("\\right)'\n"); PR("\\end{dmath*}\n");
-
-        return MUL(MUL(cR, POW(cL, SUB(cR, CNUM(1)))), dL);
-    } else if (!left_contains && right_contains) {
-        PR("\\left("); printNode(diff, right); PR("\\right)' \\cdot \\left(");
-        printNode(diff, left); PR("\\right)^{"); printNode(diff, right);
-        PR("} \\cdot \\ln\\left("); printNode(diff, left); PR("\\right)\n");
-        PR("\\end{dmath*}\n");
-
-        return MUL(MUL(POW(cL, cR), LOG(CNUM(M_E), cL)), dR);
-    } else { 
-        PR("\\left(\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
-        printNode(diff, left); PR("\\right) + \\frac{\\left("); printNode(diff, right);
-        PR("\\right) \\cdot \\left("); printNode(diff, left); PR("\\right)'}{");
-        printNode(diff, left); PR("}\\right) \\cdot"); PR("\\left(");
-        printNode(diff, left); PR("\\right)^{"); printNode(diff, right);
-        PR("}\n"); PR("\\end{dmath*}\n");
-
-        return MUL(ADD(MUL(dR, LOG(CNUM(M_E), cL)), MUL(DIV(cR, cL), dL)), POW(cL, cR));
-    }
-}
-
-
-static TreeNode* diffLog(Differentiator* diff, TreeNode* left, TreeNode* right, size_t var_idx)
-{
-    if (!left || !right)
-        return NULL;
-    
-    printDerivativeExpression(diff, left->parent);
-
-    bool left_contains = containsVariable(left, var_idx);
-    bool right_containts = containsVariable(right, var_idx);
-
-    printDerivativeExpression(diff, left->parent);
-
-    if (!left_contains && !right_containts) {
-        PR("0"); PR("\\end{dmath*}\n");
-        return CNUM(0);
-    } else if (!left_contains && right_containts) {
-        PR("\\frac{\\left("); printNode(diff, right); PR("\\right)'}{");
-        printNode(diff, right); PR(" \\cdot \\ln");
-        printNode(diff, left); PR("}\n"); PR("\\end{dmath*}\n");
-
-        return DIV(dR, MUL(cR, LOG(CNUM(M_E), cL)));
-    } else if (left_contains && !right_containts) {
-        PR("\\frac{\\ln\\left("); printNode(diff, right); PR("\\right) \\cdot \\left(");
-        printNode(diff, left); PR("\\right}{\\left(\\ln\\left("); printNode(diff, right);
-        PR("\\right)\\right)^2 \\cdot \\left("); printNode(diff, left); PR("\\right)}\n");
-        PR("\\end{dmath*}\n");
-
-        return DIV(MUL(LOG(CNUM(M_E), cR), dL), MUL(POW(LOG(CNUM(M_E), cL), CNUM(2)), cL));
-    } else {
-        PR("\\frac{\\frac{\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
-        printNode(diff, left); PR("\\right)}{"); printNode(diff, right);
-        PR("} - \\frac{\\left("); printNode(diff, left); PR("\\right)' \\cdot \\ln\\left(");
-        printNode(diff, right); PR("\\right)}{\\left("); printNode(diff, left);
-        PR("\\right)}}{\\ln\\left("); printNode(diff, left); PR("\\right)^2}\n");
-        PR("\\end{dmath*}\n");
-
-        return DIV(SUB(DIV(MUL(dR, LOG(CNUM(M_E), cL)), cR), DIV(MUL(dL, LOG(CNUM(M_E), cR)), cL)), POW(LOG(CNUM(M_E), cL), CNUM(2)));
-    }
-
 }
 
 

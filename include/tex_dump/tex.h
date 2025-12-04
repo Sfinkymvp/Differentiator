@@ -2,6 +2,8 @@
 #define TEX_BUILDER_H_
 
 
+#include <stdarg.h>
+
 #include "diff/diff_defs.h"
 
 
@@ -27,6 +29,9 @@ void texInit(Differentiator* diff);
 
 
 void texClose(Differentiator* diff);
+
+
+void printTex(Differentiator* diff, const char* format, ...);
 
 
 void printTitle(Differentiator* diff);

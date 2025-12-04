@@ -12,10 +12,12 @@ typedef enum {
     STATUS_TREE_INVALID_BRANCH_STRUCTURE,
 // Ошибки дифференциатора
     STATUS_DIFF_CALCULATE_ERROR,
+    STATUS_DIFF_UNKNOWN_VARIABLE,
 // Ошибки системного характера
     STATUS_SYSTEM_OUT_OF_MEMORY,
 // Ошибки аргументов командной строки
     STATUS_CLI_UNKNOWN_OPTION,
+
 // Ошибки связанные с синтаксисом
     STATUS_PARSER_INVALID_IDENTIFIER,
 // Ошибки ввода/вывода

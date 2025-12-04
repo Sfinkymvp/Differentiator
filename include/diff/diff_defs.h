@@ -40,7 +40,8 @@ typedef struct {
 
 typedef struct {
     size_t order;
-    size_t diff_var;
+    size_t diff_var_idx;
+    const char* diff_var_s;
     bool compute; 
 } DerivativeInfo;
 
@@ -53,7 +54,6 @@ typedef struct {
 
 typedef struct {
     const char* input_file;
-    const char* output_file;
     bool infix_input;
     DerivativeInfo derivative_info;
     TaylorInfo taylor_info;

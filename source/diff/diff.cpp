@@ -8,6 +8,7 @@
 #include "diff/diff_process.h"
 #include "diff/diff_optimize.h"
 #include "diff/diff_taylor.h"
+#include "diff/diff_cmd_args.h"
 
 #include "status.h"
 

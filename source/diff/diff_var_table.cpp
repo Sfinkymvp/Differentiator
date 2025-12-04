@@ -9,6 +9,7 @@
 #include "status.h"
 
 
+static OperationStatus findVariable(Differentiator* diff, size_t* var_idx, const char* variable, size_t var_len);
 static OperationStatus variableTableResize(Differentiator* diff);
 
 
@@ -17,6 +18,21 @@ void setVariableValue(Differentiator* diff, size_t var_idx, double value)
     assert(diff); assert(diff->var_table.variables); assert(var_idx < diff->var_table.count);
 
     diff->var_table.variables[var_idx].value = value;
+}
+
+
+OperationStatus defineDiffVariable(Differentiator* diff)
+{
+    assert(diff); assert(diff->var_table.variables);
+
+    for (size_t index = 0; index < diff->var_table.count; index++) {
+        if (strcmp(diff->var_table.variables[index].name, diff->args.derivative_info.diff_var_s) == 0) {
+            diff->args.derivative_info.diff_var_idx = index;
+            return STATUS_OK;
+        }
+    }
+
+    return STATUS_DIFF_UNKNOWN_VARIABLE;
 }
 
 
@@ -40,16 +56,11 @@ OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* v
 {
     assert(diff); assert(diff->var_table.variables); assert(var_idx); assert(variable);
 
-    for (size_t index = 0; index < diff->var_table.count; index++) {
-        const char* existing_name = diff->var_table.variables[index].name;
-        if (strncmp(variable, existing_name, var_len) == 0 && existing_name[var_len] == '\0') { 
-            *var_idx = index;
-            return STATUS_OK;
-        }
-    }
-
+    OperationStatus status = findVariable(diff, var_idx, variable, var_len);
+    if (status == STATUS_OK)
+        return STATUS_OK;
     if (diff->var_table.count == diff->var_table.capacity) {
-        OperationStatus status = variableTableResize(diff);
+        status = variableTableResize(diff);
         RETURN_IF_STATUS_NOT_OK(status);
     }
     assert(diff->var_table.count < diff->var_table.capacity);
@@ -66,6 +77,22 @@ OperationStatus addVariable(Differentiator* diff, size_t* var_idx, const char* v
     diff->var_table.count++;
 
     return STATUS_OK;
+}
+
+
+static OperationStatus findVariable(Differentiator* diff, size_t* var_idx, const char* variable, size_t var_len)
+{
+    assert(diff); assert(diff->var_table.variables); assert(var_idx); assert(variable);
+
+    for (size_t index = 0; index < diff->var_table.count; index++) {
+        const char* existing_name = diff->var_table.variables[index].name;
+        if (strncmp(variable, existing_name, var_len) == 0 && existing_name[var_len] == '\0') { 
+            *var_idx = index;
+            return STATUS_OK;
+        }
+    }
+
+    return STATUS_DIFF_UNKNOWN_VARIABLE;
 }
 
 
