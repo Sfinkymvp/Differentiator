@@ -104,13 +104,13 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
         }
         case OP_SIN:   return MUL(COS(cNR), dNR);
         case OP_COS:   return MUL(MUL(CNUM(-1), SIN(cNR)), dNR);
-        case OP_TAN:   return DIV(dNR, POW(COS(cNR), CNUM(2)));
+        case OP_TAN:   return MUL(DIV(CNUM(1), POW(COS(cNR), CNUM(2))), dNR);
         case OP_COT:   return MUL(DIV(CNUM(-1), POW(SIN(cNR), CNUM(2))), dNR);
 
         case OP_ASIN:  return MUL(POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5)), dNR);
         case OP_ACOS:  return MUL(MUL(CNUM(-1), POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5))), dNR);
-        case OP_ATAN:  return DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2))));
-        case OP_ACOT:  return MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), CNUM(-1));
+        case OP_ATAN:  return MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), dNR);
+        case OP_ACOT:  return MUL(MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), CNUM(-1)), dNR);
         
         case OP_SINH:  return MUL(COSH(cNR), dNR);
         case OP_COSH:  return MUL(SINH(cNR), dNR);

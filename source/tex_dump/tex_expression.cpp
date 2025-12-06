@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include "tex_dump/tex_expression.h"
 
@@ -11,6 +12,7 @@
 
 static void printNode(Differentiator* diff, TreeNode* node);
 static void printOperator(Differentiator* diff, TreeNode* node);
+static void printAdd(Differentiator* diff, TreeNode* node);
 
 
 void printExpression(Differentiator* diff, size_t tree_idx)
@@ -100,7 +102,7 @@ static void printOperator(Differentiator* diff, TreeNode* node)
     assert(node->value.op != OP_NONE); assert(node->right);
 
     switch (node->value.op) {
-        case OP_ADD: printTex(diff, "%n + %n", node->left, node->right); break;
+        case OP_ADD: printAdd(diff, node); break;
         case OP_SUB: printTex(diff, "%n - %n", node->left, node->right); break;
         case OP_MUL: printTex(diff, "%n \\cdot %n", node->left, node->right); break;
         case OP_DIV: printTex(diff, "\\frac{%n}{%n}", node->left, node->right); break;
@@ -108,28 +110,44 @@ static void printOperator(Differentiator* diff, TreeNode* node)
         case OP_POW: printTex(diff, "{(%n)}^{%n}", node->left, node->right); break;
         case OP_LOG: printTex(diff, "\\log_{%n}{%n}", node->left, node->right); break;
 
-        case OP_SIN: printTex(diff, "\\sin{%n}", node->right); break;
-        case OP_COS: printTex(diff, "\\cos{%n}", node->right); break;
-        case OP_TAN: printTex(diff, "\\tan{%n}", node->right); break;
-        case OP_COT: printTex(diff, "\\cot{%n}", node->right); break;
+        case OP_SIN: printTex(diff, "\\sin{(%n)}", node->right); break;
+        case OP_COS: printTex(diff, "\\cos{(%n)}", node->right); break;
+        case OP_TAN: printTex(diff, "\\tan{(%n)}", node->right); break;
+        case OP_COT: printTex(diff, "\\cot{(%n)}", node->right); break;
 
-        case OP_ASIN: printTex(diff, "\\arcsin{%n}", node->right); break;
-        case OP_ACOS: printTex(diff, "\\arccos{%n}", node->right); break;
-        case OP_ATAN: printTex(diff, "\\arctan{%n}", node->right); break;
-        case OP_ACOT: printTex(diff, "\\arccot{%n}", node->right); break;
+        case OP_ASIN: printTex(diff, "\\arcsin{(%n)}", node->right); break;
+        case OP_ACOS: printTex(diff, "\\arccos{(%n)}", node->right); break;
+        case OP_ATAN: printTex(diff, "\\arctan{(%n)}", node->right); break;
+        case OP_ACOT: printTex(diff, "\\arccot{(%n)}", node->right); break;
 
-        case OP_SINH: printTex(diff, "\\sinh{%n}", node->right); break;
-        case OP_COSH: printTex(diff, "\\cosh{%n}", node->right); break;
-        case OP_TANH: printTex(diff, "\\tanh{%n}", node->right); break;
-        case OP_COTH: printTex(diff, "\\coth{%n}", node->right); break;
+        case OP_SINH: printTex(diff, "\\sinh{(%n)}", node->right); break;
+        case OP_COSH: printTex(diff, "\\cosh{(%n)}", node->right); break;
+        case OP_TANH: printTex(diff, "\\tanh{(%n)}", node->right); break;
+        case OP_COTH: printTex(diff, "\\coth{(%n)}", node->right); break;
 
-        case OP_ASINH: printTex(diff, "\\operatorname{asinh}{%n}", node->right); break;
-        case OP_ACOSH: printTex(diff, "\\operatorname{acosh}{%n}", node->right); break;
-        case OP_ATANH: printTex(diff, "\\operatorname{atanh}{%n}", node->right); break;
-        case OP_ACOTH: printTex(diff, "\\operatorname{acoth}{%n}", node->right); break;
+        case OP_ASINH: printTex(diff, "\\operatorname{asinh}{(%n)}", node->right); break;
+        case OP_ACOSH: printTex(diff, "\\operatorname{acosh}{(%n)}", node->right); break;
+        case OP_ATANH: printTex(diff, "\\operatorname{atanh}{(%n)}", node->right); break;
+        case OP_ACOTH: printTex(diff, "\\operatorname{acoth}{(%n)}", node->right); break;
 
         case OP_NONE: fprintf(stderr, "Error: OP_NONE detected in tex print\n"); break;
         default: fprintf(stderr, "Critical error: Unknown op type %d\n", node->value.op); break;
     }
 }
 
+
+static void printAdd(Differentiator* diff, TreeNode* node)
+{
+    assert(diff); assert(node);
+
+    bool is_remainder = node->right && node->right->type == NODE_NUM &&
+        fabs(node->right->value.num_val) < EPS;
+
+    printTex(diff, "%n", node->left);
+    if (is_remainder) {
+        printTex(diff, " + o((x - %g)^{%zu})", diff->args.taylor_info.center,
+            diff->args.derivative_info.order);
+    } else {
+        printTex(diff, " + %n", node->right);
+    }
+}

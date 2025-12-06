@@ -53,7 +53,7 @@ static double factorial(size_t n);
         "\\begin{figure}[H]\n"
         "\\centering\n"
         "\\includegraphics[width=0.8\\textwidth]{%s}\n"
-        "\\caption{Сравнение исходной функции и ее приближения полиномом Тейлора $T_n(x)$.}\n"
+        "\\caption{Сравнение исходной функции и ее приближения по формуле Тейлора.}\n"
         "\\end{figure}\n", diff->args.taylor_info.center, output_filename);
 }
 

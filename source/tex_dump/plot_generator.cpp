@@ -91,11 +91,11 @@ static OperationStatus processPlotting(Differentiator* diff, const char* output_
             status = finishPlotting(script_filename);
         }
 
-        //deleteScriptFile(script_filename);
+        deleteScriptFile(script_filename);
     }
 
     for (size_t index = 0; index < tree_count; index++) {
-        //deleteDataFile(tree_indexes[index]);
+        deleteDataFile(tree_indexes[index]);
     }
 
     return status;
@@ -120,6 +120,8 @@ static OperationStatus generatePlotData(Differentiator* diff, size_t tree_idx)
         double y = evaluateNode(diff, diff->forest.trees[tree_idx].root);
         if (!isnan(y)) {
             fprintf(data_file, "%f %f\n", x, y);
+        } else {
+            fprintf(data_file, "\n");
         }
     }
 
