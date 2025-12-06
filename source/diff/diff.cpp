@@ -75,8 +75,11 @@ OperationStatus diffConstructor(Differentiator* diff, const int argc, const char
     diff->forest.capacity = START_ELEMENT_COUNT;
     diff->forest.count = 0;
     diff->highlight_node = NULL;
-
     diff->graph_dump.file = NULL;
+    diff->tex_dump.range.x_min = -5;
+    diff->tex_dump.range.x_max = 5;
+    diff->tex_dump.range.y_min = -10;
+    diff->tex_dump.range.y_max = 10;
 
     diff->forest.trees = (BinaryTree*)calloc(START_ELEMENT_COUNT, sizeof(BinaryTree));
     if (diff->forest.trees == NULL)

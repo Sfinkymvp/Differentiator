@@ -44,7 +44,7 @@ void printTex(Differentiator* diff, const char* format, ...)
         if (current[1] == 'n') {
             TreeNode* node = va_arg(args, TreeNode*);
             assert(node);
-
+            assert(node->type >= 0);
             printNode(diff, node);
             if (next) {
                 fprintf(TEX_FILE, "%.*s", (int)(next - current - 2), current + 2);
@@ -69,7 +69,6 @@ static void printNode(Differentiator* diff, TreeNode* node)
         printTex(diff, "{\\color{red} ");
     }
 
-    printf("node: %p, type: %d\n", node, node->type);
     switch (node->type) {
         case NODE_OP: {
             printOperator(diff, node);
@@ -106,7 +105,7 @@ static void printOperator(Differentiator* diff, TreeNode* node)
         case OP_MUL: printTex(diff, "%n \\cdot %n", node->left, node->right); break;
         case OP_DIV: printTex(diff, "\\frac{%n}{%n}", node->left, node->right); break;
 
-        case OP_POW: printTex(diff, "{%n}^{%n}", node->left, node->right); break;
+        case OP_POW: printTex(diff, "{(%n)}^{%n}", node->left, node->right); break;
         case OP_LOG: printTex(diff, "\\log_{%n}{%n}", node->left, node->right); break;
 
         case OP_SIN: printTex(diff, "\\sin{%n}", node->right); break;

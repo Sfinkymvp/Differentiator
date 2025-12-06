@@ -102,10 +102,10 @@ OperationStatus texClose(Differentiator* diff)
 
     assert(fclose(TEX_FILE) == 0);
     TEX_FILE = NULL;
-// > /dev/null
+
     printf("hello!\n");
     char command[BUFFER_SIZE * 2] = {};
-    snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s", diff->tex_dump.filename);
+    snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode %s > /dev/null", diff->tex_dump.filename);
     int result = system(command);
     if (result != 0) {
         return STATUS_SYSTEM_CALL_ERROR;

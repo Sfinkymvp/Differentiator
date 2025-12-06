@@ -25,6 +25,8 @@ static OperationStatus readNode(TreeNode** node, Differentiator* diff,
 static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
     char* src_code, int* position);
 
+static void getPlotRange(Differentiator* diff, char* buffer);
+
 static OpType getOpType(const char* buffer);
 static inline void skipWhitespaces(char* src_code, int* position);
 static size_t getFileSize(FILE* input_file);
@@ -77,6 +79,8 @@ static OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE
 
     char* buffer = src_code;
     diff->forest.trees[tree_idx].root = getTree(diff, &buffer);
+    getPlotRange(diff, buffer);
+
     free(src_code);
     if (diff->forest.trees[tree_idx].root == NULL) {
         return STATUS_IO_FILE_READ_ERROR;
@@ -206,6 +210,24 @@ static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
     }
 
     return status;
+}
+
+
+static void getPlotRange(Differentiator* diff, char* buffer)
+{
+    assert(diff); assert(buffer);
+
+    double x_min =0, x_max = 0, y_min = 0, y_max = 0;
+    PlotRange* range = &diff->tex_dump.range;
+    int scan_result = sscanf(buffer, "x=[%lf:%lf],y=[%lf:%lf]", &x_min, &x_max,
+        &y_min, &y_max);
+    if (scan_result == 4) {
+        range->x_min = x_min;
+        range->x_max = x_max;
+        range->y_min = y_min;
+        range->y_max = y_max;
+        return;
+    }
 }
 
 

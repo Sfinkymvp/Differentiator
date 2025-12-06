@@ -44,7 +44,7 @@ static double factorial(size_t n);
     snprintf(output_filename, BUFFER_SIZE, "%s/%s_%03zu", GNUPLOT_IMAGES_DIRECTORY,
         GNUPLOT_OUTPUT_FILENAME, tree_idx);
 
-    OperationStatus status = generatePlot(diff, output_filename, 1, 0, tree_idx);
+    OperationStatus status = generatePlot(diff, output_filename, 2, 0, tree_idx);
     treeDestructor(&diff->forest.trees[tree_idx]);
     if (status != STATUS_OK) return;
 
@@ -72,7 +72,7 @@ TreeNode* createTaylorTree(Differentiator* diff, size_t derivative_counter)
     if (fabs(derivative_value) < EPS) {
         return next_derivative;
     }
-    TreeNode* current_derivative = MUL(CNUM(fabs(derivative_value)),
+    TreeNode* current_derivative = MUL(CNUM(derivative_value),
                                        POW(SUB(CVAR(diff->args.derivative_info.diff_var_idx),
                                                CNUM(diff->args.taylor_info.center)),
                                            CNUM((double)derivative_counter)));

@@ -90,7 +90,7 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
             printDerivativeExpression(diff, node);
             printTex(diff, "\\left(\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)+"
                 "\\frac{\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}\\right)\\cdot\\left(%n\\right)^{%n}\n\\end{dmath*}\n",
-                NR, NL, NR, NL, NL, NR);
+                NR, NL, NR, NL, NL, NR, NL);
 
             return MUL(ADD(MUL(dNR, LOG(CNUM(M_E), cNL)), MUL(DIV(cNR, cNL), dNL)), POW(cNL, cNR));
         }

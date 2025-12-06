@@ -19,6 +19,9 @@ const char* GNUPLOT_DATA_FILENAME =    "plot_data";
 const char* GNUPLOT_SCRIPT_FILENAME =  "plot_script";
 
 
+double GNUPLOT_SHIFT = 0.01;
+
+
 static OperationStatus processPlotting(Differentiator* diff, const char* output_filename,
     size_t* tree_indexes, size_t tree_count);
 
@@ -88,11 +91,11 @@ static OperationStatus processPlotting(Differentiator* diff, const char* output_
             status = finishPlotting(script_filename);
         }
 
-        deleteScriptFile(script_filename);
+        //deleteScriptFile(script_filename);
     }
 
     for (size_t index = 0; index < tree_count; index++) {
-        deleteDataFile(tree_indexes[index]);
+        //deleteDataFile(tree_indexes[index]);
     }
 
     return status;
@@ -112,7 +115,7 @@ static OperationStatus generatePlotData(Differentiator* diff, size_t tree_idx)
         return STATUS_IO_FILE_OPEN_ERROR;
     }
 
-    for (double x = -5; x <= 5; x += 0.05) {
+    for (double x = diff->tex_dump.range.x_min; x <= diff->tex_dump.range.x_max; x += GNUPLOT_SHIFT) {
         setVariableValue(diff, diff->args.derivative_info.diff_var_idx, x);
         double y = evaluateNode(diff, diff->forest.trees[tree_idx].root);
         if (!isnan(y)) {
@@ -157,9 +160,14 @@ static void printScriptInfo(Differentiator* diff, const char* output_filename,
         "set terminal pdfcairo enhanced font 'Arial,12'\n"
         "set output '%s.pdf'\n"
         "set xlabel 'X Axis'\n"
+        "set xrange [%g:%g]\n"
         "set ylabel 'Y Axis'\n"
+        "set yrange [%g:%g]\n"
         "plot '%s/%s_%03zu' using 1:2 with lines", output_filename,
+        diff->tex_dump.range.x_min, diff->tex_dump.range.x_max,
+        diff->tex_dump.range.y_min, diff->tex_dump.range.y_max,
         GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[0]);
+
     for (size_t index = 1; index < tree_count; index++) {
         fprintf(script_file, ", '%s/%s_%03zu' using 1:2 with lines",
             GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[index]);
