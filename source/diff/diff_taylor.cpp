@@ -14,7 +14,7 @@
 
 #include "tree/tree.h"
 
-#include "tex_dump/tex.h"
+#include "tex_dump/tex_struct.h"
 #include "tex_dump/plot_generator.h"
 
 
@@ -33,27 +33,28 @@ static double factorial(size_t n);
     assert(diff->forest.trees[tree_idx].root);
     TREE_DUMP(diff, tree_idx, STATUS_OK, "creating taylor tree");
 
-    fprintf(TEX_FILE, "\\chapter{Разложение функции по формуле Тейлора}");
-    fprintf(TEX_FILE, "Напомню, что наша функция выглядит следующим образом:\n");
+    printTex(diff,
+        "\\chapter{Разложение функции по формуле Тейлора}\n"
+        "Напомню, что наша функция выглядит следующим образом:\n");
     printExpression(diff, 0);
-    fprintf(TEX_FILE, "Разложим функцию по формуле Тейлора с остаточным членом в форме Пеано\n");
+    printTex(diff, "Разложим функцию по формуле Тейлора с остаточным членом в форме Пеано\n");
     printExpression(diff, tree_idx);
 
-    char output_file[BUFFER_SIZE] = "";
-    snprintf(output_file, BUFFER_SIZE, "%s/%s_%03zu", GNUPLOT_IMAGES_DIRECTORY,
+    char output_filename[BUFFER_SIZE] = "";
+    snprintf(output_filename, BUFFER_SIZE, "%s/%s_%03zu", GNUPLOT_IMAGES_DIRECTORY,
         GNUPLOT_OUTPUT_FILENAME, tree_idx);
 
-    OperationStatus status = generatePlot(diff, diff->forest.trees[tree_idx].root, output_file, tree_idx, true);
+    OperationStatus status = generatePlot(diff, output_filename, 1, 0, tree_idx);
     treeDestructor(&diff->forest.trees[tree_idx]);
     if (status != STATUS_OK) return;
 
-    fprintf(TEX_FILE, "Посмотрим, как выглядит график функции и ее разложения в точке %g\n",
-        diff->args.taylor_info.center);
-    fprintf(TEX_FILE, "\\begin{figure}[H]\n");
-    fprintf(TEX_FILE, "\\centering\n");
-    fprintf(TEX_FILE, "\\includegraphics[width=0.8\\textwidth]{%s}\n", output_file);
-    fprintf(TEX_FILE, "\\caption{Сравнение исходной функции и ее приближения полиномом Тейлора $T_n(x)$.}\n");
-    fprintf(TEX_FILE, "\\end{figure}\n");
+    printTex(diff,
+        "Посмотрим, как выглядит график функции и ее разложения в точке %g\n"
+        "\\begin{figure}[H]\n"
+        "\\centering\n"
+        "\\includegraphics[width=0.8\\textwidth]{%s}\n"
+        "\\caption{Сравнение исходной функции и ее приближения полиномом Тейлора $T_n(x)$.}\n"
+        "\\end{figure}\n", diff->args.taylor_info.center, output_filename);
 }
 
 

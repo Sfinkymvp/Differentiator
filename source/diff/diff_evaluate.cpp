@@ -131,7 +131,7 @@ static double evaluateMul(double left_arg, double right_arg) { return left_arg *
 static double evaluateDiv(double left_arg, double right_arg)
 {
     if (fabs(right_arg) < EPS) {
-        fprintf(stderr, "Division by zero: %g / %g!\n", left_arg, right_arg);
+        //fprintf(stderr, "Division by zero: %g / %g!\n", left_arg, right_arg);
         return NAN;
     }
     return left_arg / right_arg;
@@ -145,14 +145,14 @@ static double evaluatePow(double left_arg, double right_arg)
     }
     if (fabs(left_arg) < EPS) {
         if (right_arg < 0) {
-            fprintf(stderr, "Division by zero: 0^(%g)!\n", right_arg);
+            //fprintf(stderr, "Division by zero: 0^(%g)!\n", right_arg);
             return NAN;
         }
         return 0;
     }
     if (left_arg < -EPS) {
         if (fabs(right_arg - round(right_arg)) >= EPS) {
-            fprintf(stderr, "Incorrect base of power: (%g)^(%g) (must be > 0)!\n", right_arg, left_arg);
+            //fprintf(stderr, "Incorrect base of power: (%g)^(%g) (must be > 0)!\n", right_arg, left_arg);
             return NAN;
         }
     }
@@ -161,13 +161,13 @@ static double evaluatePow(double left_arg, double right_arg)
 static double evaluateLog(double left_arg, double right_arg)
 {
     if (fabs(left_arg) <= EPS || fabs(left_arg - 1) < EPS) {
-        fprintf(stderr, "Incorrect base of logarithm: log(%g, %g)  (must be > 0 and != 1)!\n",
-                left_arg, right_arg);
+        //fprintf(stderr, "Incorrect base of logarithm: log(%g, %g)  (must be > 0 and != 1)!\n",
+        //        left_arg, right_arg);
         return NAN;
     }
     if (fabs(right_arg) <= EPS) {
-        fprintf(stderr, "Incorrect logarithm argument: log(%g, %g) (must be > 0)!\n",
-                left_arg, right_arg);
+        //fprintf(stderr, "Incorrect logarithm argument: log(%g, %g) (must be > 0)!\n",
+        //        left_arg, right_arg);
         return NAN;
     }
     return log(right_arg) / log(left_arg);
@@ -180,7 +180,7 @@ static double evaluateTan(double, double right_arg) { return tan(right_arg); }
 static double evaluateCot(double, double right_arg)
 {
     if (fabs(right_arg) < EPS) {
-        fprintf(stderr, "Division by zero: 1 / tan(%g)!\n", right_arg);
+        //fprintf(stderr, "Division by zero: 1 / tan(%g)!\n", right_arg);
         return NAN;
     }
     return 1 / tan(right_arg);
@@ -190,7 +190,7 @@ static double evaluateCot(double, double right_arg)
 static double evaluateAsin(double, double right_arg)
 {
     if (fabs(right_arg) > 1 + EPS) {
-        fprintf(stderr, "Incorrect asin argument: asin(%g) (must be >= -1 and <= 1)!\n", right_arg);
+        //fprintf(stderr, "Incorrect asin argument: asin(%g) (must be >= -1 and <= 1)!\n", right_arg);
         return NAN;
     }
     return asin(right_arg);
@@ -198,7 +198,7 @@ static double evaluateAsin(double, double right_arg)
 static double evaluateAcos(double, double right_arg)
 {
     if (fabs(right_arg) > 1 + EPS) {
-        fprintf(stderr, "Incorrect acos argument: acos(%g) (must be >= -1 and <= 1)!\n", right_arg);
+        //fprintf(stderr, "Incorrect acos argument: acos(%g) (must be >= -1 and <= 1)!\n", right_arg);
         return NAN;
     }
     return acos(right_arg);
@@ -212,7 +212,7 @@ static double evaluateTanh(double, double right_arg) { return tanh(right_arg); }
 static double evaluateCoth(double, double right_arg)
 {
     if (fabs(right_arg) < EPS) {
-        fprintf(stderr, "Division by zero: 1 / tanh(%g)!\n", right_arg);
+        //fprintf(stderr, "Division by zero: 1 / tanh(%g)!\n", right_arg);
         return NAN;
     }
     return 1 / tanh(right_arg);
@@ -223,7 +223,7 @@ static double evaluateAsinh(double, double right_arg) { return asinh(right_arg);
 static double evaluateAcosh(double, double right_arg)
 {
     if (right_arg < 1 + EPS) {
-        fprintf(stderr, "Invalid acosh argument: acosh(%g) (must be >= 1)!\n", right_arg);
+        //fprintf(stderr, "Invalid acosh argument: acosh(%g) (must be >= 1)!\n", right_arg);
         return NAN;
     }
     return acosh(right_arg);
@@ -231,7 +231,7 @@ static double evaluateAcosh(double, double right_arg)
 static double evaluateAtanh(double, double right_arg) 
 {
     if (fabs(right_arg) > 1 - EPS) {
-        fprintf(stderr, "Invalid atanh argument: acosh(%g) (must be > -1 or < 1)!\n", right_arg);
+        //fprintf(stderr, "Invalid atanh argument: acosh(%g) (must be > -1 or < 1)!\n", right_arg);
         return NAN;
     }
     return atanh(right_arg);
@@ -239,7 +239,7 @@ static double evaluateAtanh(double, double right_arg)
 static double evaluateAcoth(double, double right_arg) 
 {
     if (fabs(right_arg) < 1 + EPS) {
-        fprintf(stderr, "Invalid acoth argument: acoth(%g) (must be < -1 or > 1)!\n", right_arg);
+        //fprintf(stderr, "Invalid acoth argument: acoth(%g) (must be < -1 or > 1)!\n", right_arg);
         return NAN;
     }
     return atanh(1 / right_arg);

@@ -15,7 +15,7 @@ const double EPS = 1e-7;
 typedef struct {
     FILE* file;
     char directory[BUFFER_SIZE];
-    int image_counter;
+    size_t image_counter;
 } GraphDumpState;
 
 
@@ -74,6 +74,7 @@ typedef struct {
     CmdArgs args; 
     GraphDumpState graph_dump;
     TexDumpState tex_dump;
+    const TreeNode* highlight_node;
 } Differentiator;
 
 

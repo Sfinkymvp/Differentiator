@@ -15,6 +15,7 @@ typedef enum {
     STATUS_DIFF_UNKNOWN_VARIABLE,
 // Ошибки системного характера
     STATUS_SYSTEM_OUT_OF_MEMORY,
+    STATUS_SYSTEM_CALL_ERROR,
 // Ошибки аргументов командной строки
     STATUS_CLI_UNKNOWN_OPTION,
 

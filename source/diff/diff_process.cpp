@@ -8,7 +8,7 @@
 #include "diff/diff_defs.h"
 #include "diff/diff.h"
 
-#include "tex_dump/tex.h"
+#include "tex_dump/tex_struct.h"
     
 
 #define PR(string) fprintf(TEX_FILE, string)
@@ -62,62 +62,43 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
     switch (node->value.op) {
         case OP_ADD: {
             printDerivativeExpression(diff, node);
-            PR("\\left( ");
-            printNode(diff, NL); PR(" \\right)' + \\left( ");
-            printNode(diff, NR); PR(" \\right)'\n");
-            PR("\\end{dmath*}\n");
-
+            printTex(diff, "\\left(%n\\right)'+\\left(%n\\right)'\n\\end{dmath*}\n", NL, NR);
             return ADD(dNL, dNR);
         }
         case OP_SUB: {
             printDerivativeExpression(diff, node);
-            PR("\\left( ");
-            printNode(diff, NL); PR(" \\right)' - \\left( ");
-            printNode(diff, NR); PR(" \\right)'\n");
-            PR("\\end{dmath*}\n");
-
+            printTex(diff, "\\left(%n\\right)'-\\left(%n\\right)'\n\\end{dmath*}\n", NL, NR);
             return SUB(dNL, dNR);
         }
         case OP_MUL: {
             printDerivativeExpression(diff, node);
-            PR("\\left( "); printNode(diff, NL);
-            PR(" \\right)' \\cdot \\left( "); printNode(diff, NR);
-            PR(" \\right) + \\left( "); printNode(diff, NL);
-            PR("\\right) \\cdot \\left( "); printNode(diff, NR);
-            PR(" \\right)'\n"); PR("\\end{dmath*}\n");
+            printTex(diff, "\\left(%n\\right)'\\cdot\\left(%n\\right)+"
+                "\\left(%n\\right)\\cdot\\left(%n\\right)'\n\\end{dmath*}\n",
+                NL, NR, NL, NR);
 
             return ADD(MUL(dNL, cNR), MUL(cNL, dNR));
         }
         case OP_DIV: {
             printDerivativeExpression(diff, node);
-            PR("\\frac{\\left( "); printNode(diff, NL);
-            PR(" \\right)' \\cdot \\left( "); printNode(diff, NR);
-            PR(" \\right) - \\left( "); printNode(diff, NL);
-            PR("\\right) \\cdot \\left( "); printNode(diff, NR);
-            PR(" \\right)'}{"); printNode(diff, NR);
-            PR("}\n"); PR("\\end{dmath*}\n");
+            printTex(diff, "\\frac{\\left(%n\\right)'\\cdot\\left(%n\\right)-"
+                "\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}\n\\end{dmath*}\n",
+                NL, NR, NL, NR, NR);
 
             return DIV(SUB(MUL(dNL, cNR), MUL(cNL, dNR)), POW(cNR, CNUM(2)));
         }
         case OP_POW: {
-            /*printDerivativeExpression(diff, left->parent);
-            PR("\\left(\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
-            printNode(diff, left); PR("\\right) + \\frac{\\left("); printNode(diff, right);
-            PR("\\right) \\cdot \\left("); printNode(diff, left); PR("\\right)'}{");
-            printNode(diff, left); PR("}\\right) \\cdot"); PR("\\left(");
-            printNode(diff, left); PR("\\right)^{"); printNode(diff, right);
-            PR("}\n"); PR("\\end{dmath*}\n");*/
+            printDerivativeExpression(diff, node);
+            printTex(diff, "\\left(\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)+"
+                "\\frac{\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}\\right)\\cdot\\left(%n\\right)^{%n}\n\\end{dmath*}\n",
+                NR, NL, NR, NL, NL, NR);
 
             return MUL(ADD(MUL(dNR, LOG(CNUM(M_E), cNL)), MUL(DIV(cNR, cNL), dNL)), POW(cNL, cNR));
         }
         case OP_LOG: {
-            /*printDerivativeExpression(diff, left->parent);
-            PR("\\frac{\\frac{\\left("); printNode(diff, right); PR("\\right)' \\cdot \\ln\\left(");
-            printNode(diff, left); PR("\\right)}{"); printNode(diff, right);
-            PR("} - \\frac{\\left("); printNode(diff, left); PR("\\right)' \\cdot \\ln\\left(");
-            printNode(diff, right); PR("\\right)}{\\left("); printNode(diff, left);
-            PR("\\right)}}{\\ln\\left("); printNode(diff, left); PR("\\right)^2}\n");
-            PR("\\end{dmath*}\n");*/
+            printDerivativeExpression(diff, node);
+            printTex(diff, "\\frac{\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{%n}-"
+                "\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{\\left(%n\\right)}{\\left(%n\\right)^2}\n\\end{dmath*}\n",
+                NR, NL, NR, NL, NR, NL, NL);
 
             return DIV(SUB(DIV(MUL(dNR, LOG(CNUM(M_E), cNL)), cNR), DIV(MUL(dNL, LOG(CNUM(M_E), cNR)), cNL)), POW(LOG(CNUM(M_E), cNL), CNUM(2)));
         }
@@ -165,8 +146,7 @@ static inline void printDerivativeExpression(Differentiator* diff, TreeNode* nod
 {
     assert(diff); assert(node);
 
-    PR("\\begin{dmath*}\n");
-    PR("\\left( "); printNode(diff, node); PR(" \\right)' = ");
+    printTex(diff, "\\begin{dmath*}\n\\left(%n\\right)' = ", node);
 }
 
 

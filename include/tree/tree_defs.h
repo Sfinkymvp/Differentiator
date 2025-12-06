@@ -45,6 +45,9 @@ typedef enum {
 } OpType;
 
 
+const size_t OP_MAX_COUNT = OP_NONE + 1;
+
+
 typedef struct {
     OpType op;
     const char* name;
@@ -52,8 +55,41 @@ typedef struct {
 } OpInfo;
 
 
-extern const OpInfo OP_TABLE[];
-extern const size_t OP_TABLE_COUNT;
+#define OP_INFO_ITEM(ENUM, SYMBOL) {ENUM, #ENUM, SYMBOL}
+
+
+const OpInfo OP_TABLE[] = {
+    OP_INFO_ITEM(OP_ADD, "+"),
+    OP_INFO_ITEM(OP_SUB, "-"),
+    OP_INFO_ITEM(OP_MUL, "*"),
+    OP_INFO_ITEM(OP_DIV, "/"),
+
+    OP_INFO_ITEM(OP_POW, "^"),
+    OP_INFO_ITEM(OP_LOG, "log"),
+
+    OP_INFO_ITEM(OP_SIN, "sin"),
+    OP_INFO_ITEM(OP_COS, "cos"),
+    OP_INFO_ITEM(OP_TAN, "tan"),
+    OP_INFO_ITEM(OP_COT, "cot"),
+
+    OP_INFO_ITEM(OP_ASIN, "asin"),
+    OP_INFO_ITEM(OP_ACOS, "acos"),
+    OP_INFO_ITEM(OP_ATAN, "atan"),
+    OP_INFO_ITEM(OP_ACOT, "acot"),
+
+    OP_INFO_ITEM(OP_SINH, "sinh"),
+    OP_INFO_ITEM(OP_COSH, "cosh"),
+    OP_INFO_ITEM(OP_TANH, "tanh"),
+    OP_INFO_ITEM(OP_COTH, "coth"),
+
+    OP_INFO_ITEM(OP_ASINH, "asinh"),
+    OP_INFO_ITEM(OP_ACOSH, "acosh"),
+    OP_INFO_ITEM(OP_ATANH, "atanh"),
+    OP_INFO_ITEM(OP_ACOTH, "acoth"),
+
+    OP_INFO_ITEM(OP_NONE, "")
+};
+const size_t OP_TABLE_COUNT = sizeof(OP_TABLE) / sizeof(*OP_TABLE);
 
 
 typedef struct {

@@ -27,7 +27,7 @@ FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/tree/tre
 	$(OBJDIR)/diff/diff_evaluate.o $(OBJDIR)/diff/diff_optimize.o $(OBJDIR)/tree/tree_parse.o \
 	$(OBJDIR)/diff/diff_taylor.o  $(OBJDIR)/diff/diff_dsl.o $(OBJDIR)/diff/diff_cmd_args.o
 DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o \
-	$(OBJDIR)/tex_dump/tex.o $(OBJDIR)/tex_dump/plot_generator.o
+	$(OBJDIR)/tex_dump/tex_struct.o $(OBJDIR)/tex_dump/tex_expression.o $(OBJDIR)/tex_dump/plot_generator.o
 FLAGS += -Iinclude
 
 OUTPUT_NAME = diffuzor

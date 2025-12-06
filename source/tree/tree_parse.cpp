@@ -22,7 +22,7 @@ TreeNode* getTree(Differentiator* diff, char** buffer)
     assert(diff); assert(buffer); assert(*buffer);
     
     TreeNode* node = getExpression(diff, buffer);
-    if (**buffer != '\0') {
+    if (**buffer != '$') {
         fprintf(stderr, "Syntax error in getTree!\n");
         if (node) deleteBranch(node);
         return NULL;

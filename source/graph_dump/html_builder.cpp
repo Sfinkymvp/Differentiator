@@ -75,9 +75,9 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
     char graph_dot_file[BUFFER_SIZE * 2] = {};
     char graph_svg_file[BUFFER_SIZE * 2] = {};
 
-    snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.dot",
+    snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.dot",
              DIRECTORY, diff->graph_dump.image_counter);
-    snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03d.svg",
+    snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.svg",
              DIRECTORY, diff->graph_dump.image_counter);
 
     generateGraph(diff, tree_idx, graph_dot_file);
@@ -106,7 +106,7 @@ static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* inf
     writeTreeInfo(diff, tree, info);
 
     fprintf(GRAPH_FILE, "<div style=\"overflow-x: auto; white-space: nowrap;\">\n");
-    fprintf(GRAPH_FILE, "<img src=\"tree_graph_%03d.svg\" "
+    fprintf(GRAPH_FILE, "<img src=\"tree_graph_%03zu.svg\" "
         "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
         diff->graph_dump.image_counter);
     fprintf(GRAPH_FILE, "</div>\n");
@@ -123,7 +123,7 @@ static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info
     assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
     assert(info); assert(info->message); assert(info->file); assert(info->function); 
 
-    fprintf(GRAPH_FILE, "\t<h1>TREE DUMP #%03d</h1>\n", diff->graph_dump.image_counter);
+    fprintf(GRAPH_FILE, "\t<h1>TREE DUMP #%03zu</h1>\n", diff->graph_dump.image_counter);
     fprintf(GRAPH_FILE, "\t<h2>Dump {%s:%d} called from %s()</h2>\n",
         info->file, info->line, info->function);
     fprintf(GRAPH_FILE, "\t<h2>Tree \"%s\" {%s:%d} created in %s()</h2>\n",

@@ -14,7 +14,7 @@
 
 #include "graph_dump/html_builder.h"
 
-#include "tex_dump/tex.h"
+#include "tex_dump/tex_struct.h"
 #include "tex_dump/plot_generator.h"
 
 #include "tree/tree.h"
@@ -32,14 +32,14 @@ OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
         diffForestResize(diff);
     assert(diff->forest.count < diff->forest.capacity);
 
-    fprintf(TEX_FILE, "\n\\subsection{Вычисление}\n");
+    printTex(diff, "\n\\subsection{Вычисление}\n");
     TREE_CREATE(&diff->forest.trees[diff->forest.count], "create diff tree");
     diff->forest.trees[diff->forest.count].root = diffNode(diff,
         diff->forest.trees[diff->forest.count - 1].root, var_idx);
     if (!diff->forest.trees[diff->forest.count].root)
         return STATUS_DIFF_CALCULATE_ERROR;
 
-    fprintf(TEX_FILE, "\n\\subsection{Результат вычисления}\n");
+    printTex(diff, "\n\\subsection{Результат вычисления}\n");
     printExpression(diff, diff->forest.count);
     diff->forest.count++;
 
@@ -74,6 +74,9 @@ OperationStatus diffConstructor(Differentiator* diff, const int argc, const char
 
     diff->forest.capacity = START_ELEMENT_COUNT;
     diff->forest.count = 0;
+    diff->highlight_node = NULL;
+
+    diff->graph_dump.file = NULL;
 
     diff->forest.trees = (BinaryTree*)calloc(START_ELEMENT_COUNT, sizeof(BinaryTree));
     if (diff->forest.trees == NULL)

@@ -13,7 +13,7 @@
 
 #include "status.h"
 
-#include "tex_dump/tex.h"
+#include "tex_dump/tex_struct.h"
 #include "tex_dump/plot_generator.h"
 
 #include "tree/tree.h"
@@ -28,8 +28,9 @@ int main(const int argc, const char** argv)
         return 1;
 
     status = diffLoadExpression(&diff);
-    if (status == STATUS_OK)
+    if (status == STATUS_OK) {
         printIntroduction(&diff);
+    }
 
     printf("diff var value: %g\n", diff.var_table.variables[diff.args.derivative_info.diff_var_idx].value);
     printf("taylor center value: %g\n", diff.args.taylor_info.center);
