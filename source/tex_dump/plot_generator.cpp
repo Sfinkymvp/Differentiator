@@ -159,20 +159,34 @@ static void printScriptInfo(Differentiator* diff, const char* output_filename,
     assert(script_file); assert(tree_indexes); 
 
     fprintf(script_file, 
-        "set terminal pdfcairo enhanced font 'Arial,12'\n"
+        "set terminal pdfcairo enhanced font 'Helvetica,12'\n"
         "set output '%s.pdf'\n"
         "set xlabel 'X Axis'\n"
         "set xrange [%g:%g]\n"
         "set ylabel 'Y Axis'\n"
         "set yrange [%g:%g]\n"
-        "plot '%s/%s_%03zu' using 1:2 with lines", output_filename,
+        "set border 3\n"
+        "set tics out\n"
+        "set grid xtics ytics ls 1 lc 'gray' dt 3\n", output_filename,
         diff->tex_dump.range.x_min, diff->tex_dump.range.x_max,
-        diff->tex_dump.range.y_min, diff->tex_dump.range.y_max,
-        GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[0]);
+        diff->tex_dump.range.y_min, diff->tex_dump.range.y_max);
 
-    for (size_t index = 1; index < tree_count; index++) {
-        fprintf(script_file, ", '%s/%s_%03zu' using 1:2 with lines",
-            GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[index]);
+    for (size_t index = 0; index < tree_count; index++) {
+        if (index == 0) {
+            fprintf(script_file, "plot '%s/%s_%03zu' using 1:2 with lines",
+                GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[0]);
+        } else {
+            fprintf(script_file, ", '%s/%s_%03zu' using 1:2 with lines",
+                GNUPLOT_IMAGES_DIRECTORY, GNUPLOT_DATA_FILENAME, tree_indexes[index]);
+        }
+
+        if (tree_indexes[index] == 0) {
+            fprintf(script_file, " title 'Функция'");
+        } else if (tree_indexes[index] == diff->forest.count) {
+            fprintf(script_file, " title 'Разложение'");
+        } else {
+            fprintf(script_file, " title '%zu-я производная'", tree_indexes[index]);
+        }
     }
 
     fprintf(script_file, "\nquit\n");

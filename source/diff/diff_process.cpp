@@ -11,29 +11,90 @@
 #include "tex_dump/tex_struct.h"
     
 
-#define PR(string) fprintf(TEX_FILE, string)
+#define L node->left
+#define R node->right
 
-#define dL diffNode(diff, left, var_idx)
-#define dR diffNode(diff, right, var_idx)
-#define cL copyNode(left)
-#define cR copyNode(right)
 
-#define NL node->left
-#define NR node->right
+#define dL diffNode(diff, L, var_idx)
+#define dR diffNode(diff, R, var_idx)
+#define cL copyNode(L)
+#define cR copyNode(R)
 
-#define dNL diffNode(diff, NL, var_idx)
-#define dNR diffNode(diff, NR, var_idx)
-#define cNL copyNode(NL)
-#define cNR copyNode(NR)
+
+#define PRINT_EXPRESSION(printExpression)                                \
+    do {                                                                 \
+        printTex(diff, "\\begin{dmath*}\n\\left(%n\\right)' = ", node);  \
+        printExpression;                                                 \
+        printTex(diff, "\n\\end{dmath*}\n");                             \
+    } while (0)
+
+
+typedef TreeNode* (*ComputeDerivativeFunc)(Differentiator* diff, TreeNode* node, size_t var_idx);
 
 
 static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* copyNode(const TreeNode* node);
+static TreeNode* nodeDup(const TreeNode* node);
+
 
 static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node);
 
-static TreeNode* copyNode(const TreeNode* node);
+static TreeNode* computeAddDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeSubDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeMulDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeDivDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computePowDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeLogDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
 
-static TreeNode* nodeDup(const TreeNode* node);
+static TreeNode* computeSinDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeCosDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeTanDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeCotDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+
+static TreeNode* computeAsinDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAcosDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAtanDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAcotDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+
+static TreeNode* computeSinhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeCoshDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeTanhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeCothDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+
+static TreeNode* computeAsinhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAcoshDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAtanhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+static TreeNode* computeAcothDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
+
+
+ComputeDerivativeFunc computeDerivativeTable[OP_MAX_COUNT] = {
+    [OP_ADD] = computeAddDerivative,
+    [OP_SUB] = computeSubDerivative,
+    [OP_MUL] = computeMulDerivative,
+    [OP_DIV] = computeDivDerivative,
+    [OP_POW] = computePowDerivative,
+    [OP_LOG] = computeLogDerivative,
+
+    [OP_SIN] = computeSinDerivative,
+    [OP_COS] = computeCosDerivative,
+    [OP_TAN] = computeTanDerivative,
+    [OP_COT] = computeCotDerivative,
+
+    [OP_ASIN] = computeAsinDerivative,
+    [OP_ACOS] = computeAcosDerivative,
+    [OP_ATAN] = computeAtanDerivative,
+    [OP_ACOT] = computeAcotDerivative,
+
+    [OP_SINH] = computeSinhDerivative,
+    [OP_COSH] = computeCoshDerivative,
+    [OP_TANH] = computeTanhDerivative,
+    [OP_COTH] = computeCothDerivative,
+
+    [OP_ASINH] = computeAsinhDerivative,
+    [OP_ACOSH] = computeAcoshDerivative,
+    [OP_ATANH] = computeAtanhDerivative,
+    [OP_ACOTH] = computeAcothDerivative,
+};
 
 
 TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx)
@@ -42,89 +103,15 @@ TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx)
 
     switch (node->type) {
         case NODE_NUM: return CNUM(0);
-        case NODE_VAR:
-            if (node->value.var_idx == var_idx)
+        case NODE_VAR: 
+            if (node->value.var_idx == var_idx) {
                 return CNUM(1);
-            else
+            } else {
                 return CNUM(0);
-        case NODE_OP: {
-            return diffOp(diff, node, var_idx);
-        }
-        default: return NULL;
+            }
+        case NODE_OP:  return diffOp(diff, node, var_idx);
+        default:       return NULL;
     }    
-}
-
-
-static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
-{
-    assert(node);
-
-    switch (node->value.op) {
-        case OP_ADD: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\left(%n\\right)'+\\left(%n\\right)'\n\\end{dmath*}\n", NL, NR);
-            return ADD(dNL, dNR);
-        }
-        case OP_SUB: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\left(%n\\right)'-\\left(%n\\right)'\n\\end{dmath*}\n", NL, NR);
-            return SUB(dNL, dNR);
-        }
-        case OP_MUL: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\left(%n\\right)'\\cdot\\left(%n\\right)+"
-                "\\left(%n\\right)\\cdot\\left(%n\\right)'\n\\end{dmath*}\n",
-                NL, NR, NL, NR);
-
-            return ADD(MUL(dNL, cNR), MUL(cNL, dNR));
-        }
-        case OP_DIV: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\frac{\\left(%n\\right)'\\cdot\\left(%n\\right)-"
-                "\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}\n\\end{dmath*}\n",
-                NL, NR, NL, NR, NR);
-
-            return DIV(SUB(MUL(dNL, cNR), MUL(cNL, dNR)), POW(cNR, CNUM(2)));
-        }
-        case OP_POW: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\left(\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)+"
-                "\\frac{\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}\\right)\\cdot\\left(%n\\right)^{%n}\n\\end{dmath*}\n",
-                NR, NL, NR, NL, NL, NR, NL);
-
-            return MUL(ADD(MUL(dNR, LOG(CNUM(M_E), cNL)), MUL(DIV(cNR, cNL), dNL)), POW(cNL, cNR));
-        }
-        case OP_LOG: {
-            printDerivativeExpression(diff, node);
-            printTex(diff, "\\frac{\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{%n}-"
-                "\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{\\left(%n\\right)}{\\left(%n\\right)^2}\n\\end{dmath*}\n",
-                NR, NL, NR, NL, NR, NL, NL);
-
-            return DIV(SUB(DIV(MUL(dNR, LOG(CNUM(M_E), cNL)), cNR), DIV(MUL(dNL, LOG(CNUM(M_E), cNR)), cNL)), POW(LOG(CNUM(M_E), cNL), CNUM(2)));
-        }
-        case OP_SIN:   return MUL(COS(cNR), dNR);
-        case OP_COS:   return MUL(MUL(CNUM(-1), SIN(cNR)), dNR);
-        case OP_TAN:   return MUL(DIV(CNUM(1), POW(COS(cNR), CNUM(2))), dNR);
-        case OP_COT:   return MUL(DIV(CNUM(-1), POW(SIN(cNR), CNUM(2))), dNR);
-
-        case OP_ASIN:  return MUL(POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5)), dNR);
-        case OP_ACOS:  return MUL(MUL(CNUM(-1), POW(SUB(CNUM(1), POW(cNR, CNUM(2))), CNUM(-0.5))), dNR);
-        case OP_ATAN:  return MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), dNR);
-        case OP_ACOT:  return MUL(MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cNR, CNUM(2)))), CNUM(-1)), dNR);
-        
-        case OP_SINH:  return MUL(COSH(cNR), dNR);
-        case OP_COSH:  return MUL(SINH(cNR), dNR);
-        case OP_TANH:  return MUL(DIV(CNUM(1), POW(COSH(cNR), CNUM(2))), dNR);
-        case OP_COTH:  return MUL(DIV(CNUM(-1), POW(SINH(cNR), CNUM(2))), dNR);
-
-        case OP_ASINH: return MUL(DIV(CNUM(1), POW(ADD(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5))), dNR);
-        case OP_ACOSH: return MUL(DIV(CNUM(1), POW(SUB(POW(cNR, CNUM(2)), CNUM(1)), CNUM(0.5))), dNR);
-        case OP_ATANH: return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cNR, CNUM(2)))), dNR);
-        case OP_ACOTH: return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cNR, CNUM(2)))), dNR);
-
-        case OP_NONE:  fprintf(stderr, "Operation 'NONE' detected\n"); return NULL;
-        default:       fprintf(stderr, "Unknown operation\n"); return NULL;
-    }
 }
 
 
@@ -134,7 +121,7 @@ bool containsVariable(TreeNode* node, size_t var_idx)
         return false;
 
     switch (node->type) {
-        case NODE_OP:  return containsVariable(NL, var_idx) || containsVariable(NR, var_idx);
+        case NODE_OP:  return containsVariable(L, var_idx) || containsVariable(R, var_idx);
         case NODE_VAR: return node->value.var_idx == var_idx;
         case NODE_NUM: return false;
         default:       return false; 
@@ -142,11 +129,12 @@ bool containsVariable(TreeNode* node, size_t var_idx)
 }
 
 
-static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node)
+static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx)
 {
-    assert(diff); assert(node);
+    assert(diff); assert(node); assert(node->type == NODE_OP);
+    assert(node->value.op < OP_MAX_COUNT);
 
-    printTex(diff, "\\begin{dmath*}\n\\left(%n\\right)' = ", node);
+    return computeDerivativeTable[node->value.op](diff, node, var_idx);
 }
 
 
@@ -186,3 +174,263 @@ static TreeNode* nodeDup(const TreeNode* node)
     return new_node;
 }
 
+
+static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node)
+{
+    assert(diff); assert(node);
+}
+
+// ------------------------------------------------------------------------------------------------
+// OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_POS, OP_LOG
+// ------------------------------------------------------------------------------------------------
+static TreeNode* computeAddDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\left(%n\\right)'+\\left(%n\\right)'", L, R)
+    );
+
+    return ADD(dL, dR);
+}
+static TreeNode* computeSubDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    
+    PRINT_EXPRESSION(
+        printTex(diff, "\\left(%n\\right)'-\\left(%n\\right)'", L, R)
+    );
+
+    return SUB(dL, dR);
+}
+static TreeNode* computeMulDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    
+    PRINT_EXPRESSION(
+        printTex(diff, "\\left(%n\\right)'\\cdot\\left(%n\\right)+"
+            "\\left(%n\\right)\\cdot\\left(%n\\right)'",
+            L, R, L, R)
+    );
+
+    return ADD(MUL(dL, cR), MUL(cL, dR));
+}
+static TreeNode* computeDivDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{\\left(%n\\right)'\\cdot\\left(%n\\right)-"
+            "\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}",
+            L, R, L, R, R)
+    );
+
+    return DIV(SUB(MUL(dL, cR), MUL(cL, dR)), POW(cR, CNUM(2)));
+}
+static TreeNode* computePowDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+
+    bool left_contains = containsVariable(L, var_idx);
+    bool right_contains = containsVariable(R, var_idx);
+    if (!left_contains && !right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "0")
+        );
+        return CNUM(0);
+    } else if (left_contains && !right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "\\left(%n\\right)\\cdot\\left(%n\\right)^{%n-1}\\cdot\\left(%n\\right)",
+                R, L, R, L)
+        );
+        return MUL(MUL(cR, POW(cL, SUB(cR, CNUM(1)))), dL);
+    } else if (!left_contains && right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "\\left(%n\\right)\\cdot\\left(%n\\right)^{%n|\\cdot\\ln\\left(%n\\right)}",
+                R, L, R, L)
+        );
+        return MUL(MUL(POW(cL, cR), LOG(CNUM(M_E), cL)), dR);
+    } else {
+        PRINT_EXPRESSION(
+            printTex(diff, "\\left(\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)+"
+                "\\frac{\\left(%n\\right)\\cdot\\left(%n\\right)'}{%n}"
+                "\\right)\\cdot\\left(%n\\right)^{%n}", R, L, R, L, L, L, R)
+        );
+        return MUL(ADD(MUL(dR, LOG(CNUM(M_E), cL)), MUL(DIV(cR, cL), dL)), POW(cL, cR));
+    }
+}
+static TreeNode* computeLogDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+
+    bool left_contains = containsVariable(L, var_idx);
+    bool right_contains = containsVariable(R, var_idx);
+    if (!left_contains && !right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "0")
+        );
+        return CNUM(0);
+    } else if (left_contains && !right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "-\\frac{\\ln\\left(%n\\right)\\cdot\\left(%n\\right)}{\\left(\\ln"
+                "\\left(%n\right)\\right)^2\\cdot\\left(%n\\right)}", R, L, R, L)
+        );
+        return DIV(MUL(MUL(CNUM(-1), LOG(CNUM(M_E), cR)), dL), MUL(POW(LOG(CNUM(M_E), cL), CNUM(2)), cL));
+    } else if (!left_contains && right_contains) {
+        PRINT_EXPRESSION(
+            printTex(diff, "\\frac{\\left(%n\\right)'}{%n\\cdot\\ln\\left(%n\\right)}", R, R, L)
+        );
+        return DIV(dR, MUL(cR, LOG(CNUM(M_E), cL)));
+    } else {
+        PRINT_EXPRESSION(
+            printTex(diff, "\\frac{\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{%n}-"
+                "\\frac{\\left(%n\\right)'\\cdot\\ln\\left(%n\\right)}{\\left(%n\\right)}"
+                "{\\left(%n\\right)^2}", R, L, R, L, R, L, L)
+        );
+        return DIV(SUB(DIV(MUL(dR, LOG(CNUM(M_E), cL)), cR), DIV(MUL(dL, LOG(CNUM(M_E), cR)),
+            cL)), POW(LOG(CNUM(M_E), cL), CNUM(2)));
+    };
+}
+
+// ------------------------------------------------------------------------------------------------
+// OP_SIN, OP_COS, OP_TAN, OP_COT
+// ------------------------------------------------------------------------------------------------
+static TreeNode* computeSinDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\cos\\left(%n\\right)\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(COS(cR), dR);
+}
+static TreeNode* computeCosDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "-\\sin\\left(%n\\right)\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(MUL(CNUM(-1), SIN(cR)), dR);
+}
+static TreeNode* computeTanDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{\\cos^2\\left(%n\\right)}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(1), POW(COS(cR), CNUM(2))), dR);
+}
+static TreeNode* computeCotDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "-\\frac{1}{\\sin^2\\left(%n\\right)}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(-1), POW(SIN(cR), CNUM(2))), dR);
+}
+
+// ------------------------------------------------------------------------------------------------
+// OP_ASIN, OP_ACOS, OP_ATAN, OP_ACOT
+// ------------------------------------------------------------------------------------------------
+static TreeNode* computeAsinDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{\\left(1-\\left(%n\\right)^2\\right)^{0.5}}\\cdot\\left(%n\\right)'", R, R)
+    ); 
+    return MUL(POW(SUB(CNUM(1), POW(cR, CNUM(2))), CNUM(-0.5)), dR);
+}
+static TreeNode* computeAcosDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "-\\frac{1}{\\left(1-\\left(%n\\right)^2\\right)^{0.5}}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(MUL(CNUM(-1), POW(SUB(CNUM(1), POW(cR, CNUM(2))), CNUM(-0.5))), dR);
+}
+static TreeNode* computeAtanDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{1+\\left(%n\\right)^2}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cR, CNUM(2)))), dR);
+}
+static TreeNode* computeAcotDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "-\\frac{1}{1+\\left(%n\\right)^2}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(MUL(DIV(CNUM(1), ADD(CNUM(1), POW(cR, CNUM(2)))), CNUM(-1)), dR);
+}
+
+// ------------------------------------------------------------------------------------------------
+// OP_SINH, OP_COSH, OP_TANH, OP_COTH
+// ------------------------------------------------------------------------------------------------
+static TreeNode* computeSinhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\cosh\\left(%n\\right)\\cdot\\left(%n\\right)'", R, R)
+    ); 
+    return MUL(COSH(cR), dR);
+}
+static TreeNode* computeCoshDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\sinh\\left(%n\\right)\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(SINH(cR), dR);
+}
+static TreeNode* computeTanhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{\\cosh^2\\left(%n\\right)}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(1), POW(COSH(cR), CNUM(2))), dR);
+}
+static TreeNode* computeCothDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "-\\frac{1}{\\sinh^2\\left(%n\\right)}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(-1), POW(SINH(cR), CNUM(2))), dR);
+}
+
+// ------------------------------------------------------------------------------------------------
+// OP_ASINH, OP_ACOSH, OP_ATANH, OP_ACOTH
+// ------------------------------------------------------------------------------------------------
+static TreeNode* computeAsinhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{\\left(\\left(%n\\right)^2+1\\right)^{0.5}}\\cdot\\left(%n\\right)'", R, R)
+    ); 
+    return MUL(DIV(CNUM(1), POW(ADD(POW(cR, CNUM(2)), CNUM(1)), CNUM(0.5))), dR);
+}
+static TreeNode* computeAcoshDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{\\left(\\left(%n\\right)^2-1\\right)^{0.5}}\\cdot\\left(%n\\right)'", R, R)
+    ); 
+    return MUL(DIV(CNUM(1), POW(SUB(POW(cR, CNUM(2)), CNUM(1)), CNUM(0.5))), dR);
+}
+static TreeNode* computeAtanhDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{1-\\left(%n\\right)^2}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cR, CNUM(2)))), dR);
+}
+static TreeNode* computeAcothDerivative(Differentiator* diff, TreeNode* node, size_t var_idx)
+{
+    assert(diff); assert(node); 
+    PRINT_EXPRESSION(
+        printTex(diff, "\\frac{1}{1-\\left(%n\\right)^2}\\cdot\\left(%n\\right)'", R, R)
+    );
+    return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cR, CNUM(2)))), dR);
+}

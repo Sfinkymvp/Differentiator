@@ -45,6 +45,7 @@ static double factorial(size_t n);
         GNUPLOT_OUTPUT_FILENAME, tree_idx);
 
     OperationStatus status = generatePlot(diff, output_filename, 2, 0, tree_idx);
+    
     treeDestructor(&diff->forest.trees[tree_idx]);
     if (status != STATUS_OK) return;
 

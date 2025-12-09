@@ -145,8 +145,12 @@ static void printAdd(Differentiator* diff, TreeNode* node)
 
     printTex(diff, "%n", node->left);
     if (is_remainder) {
-        printTex(diff, " + o((x - %g)^{%zu})", diff->args.taylor_info.center,
-            diff->args.derivative_info.order);
+        if (fabs(diff->args.taylor_info.center) < EPS) {
+            printTex(diff, " + o(x^{%zu})", diff->args.derivative_info.order);
+        } else {
+            printTex(diff, " + o((x - %g)^{%zu})", diff->args.taylor_info.center,
+                diff->args.derivative_info.order);
+        }
     } else {
         printTex(diff, " + %n", node->right);
     }
