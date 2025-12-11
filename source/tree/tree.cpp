@@ -72,15 +72,12 @@ OperationStatus createNode(TreeNode** node)
 }
 
 
-OperationStatus treeConstructor(BinaryTree* tree, const char* identifier, const char* name,
+OperationStatus treeConstructor(BinaryTree* tree, const char* name,
                                 const char* file, const char* function, int line)
 {
-    assert(tree); assert(identifier); assert(name); assert(file); assert(function);
+    assert(tree); assert(name); assert(file); assert(function);
 
     tree->root = NULL;
-    tree->identifier = strdup(identifier);
-    if (tree->identifier == NULL)
-        return STATUS_SYSTEM_OUT_OF_MEMORY;
     tree->origin = (CreationInfo){name, file, function, line};
 
     return STATUS_OK;
@@ -107,8 +104,6 @@ void treeDestructor(BinaryTree* tree)
 {
     assert(tree);
 
-    if (tree->identifier)
-        free(tree->identifier); 
     if (tree->root == NULL)
         return;
     deleteBranch(tree->root);

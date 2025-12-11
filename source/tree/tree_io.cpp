@@ -36,7 +36,7 @@ OperationStatus diffLoadExpression(Differentiator* diff)
 {
     assert(diff); assert(diff->forest.trees); assert(diff->args.input_file);
 
-    OperationStatus status = TREE_CREATE(&diff->forest.trees[0], "Creating a source expression tree");
+    OperationStatus status = TREE_CREATE(&diff->forest.trees[0]);
     RETURN_IF_STATUS_NOT_OK(status);
 
     FILE* input_file = fopen(diff->args.input_file, "r");
@@ -226,7 +226,6 @@ static void getPlotRange(Differentiator* diff, char* buffer)
         range->x_max = x_max;
         range->y_min = y_min;
         range->y_max = y_max;
-        return;
     }
 }
 

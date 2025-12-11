@@ -3,7 +3,7 @@
 #include <math.h>
 #include <assert.h>
 
-#include "diff/diff_dsl.h"
+#include "diff/diff_create.h"
 #include "diff/diff_defs.h"
 
 

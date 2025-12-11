@@ -7,26 +7,22 @@
 #include "status.h"
 
 
-#define TREE_CREATE(tree, identifier)            \
-    treeConstructor(tree, identifier, #tree, __FILE__, __func__, __LINE__)
+#define TREE_CREATE(tree)            \
+    treeConstructor(tree, #tree, __FILE__, __func__, __LINE__)
 
 
 #define TREE_DUMP(diff, tree_idx, _status, format, ...)   \
     treeDump(diff ,tree_idx, _status, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 
 
-#define TREE_VERIFY(diff, tree_idx, format, ...)                       \
-    do {                                                     \
-        OperationStatus _status = treeVerify(&diff->forest.trees[tree_idx]);               \
-        TREE_DUMP(diff, tree_idx, _status, format, ##__VA_ARGS__);     \
-        if (_status != STATUS_OK) {                            \
-            return _status;                                  \
-        }                                                    \
+#define TREE_VERIFY(diff, tree_idx, format, ...)                              \
+    do {                                                                      \
+        OperationStatus _status = treeVerify(&diff->forest.trees[tree_idx]);  \
+        TREE_DUMP(diff, tree_idx, _status, format, ##__VA_ARGS__);            \
+        if (_status != STATUS_OK) {                                           \
+            return _status;                                                   \
+        }                                                                     \
     } while (0)
-
-
-#define GENERATE_STATUS_MESSAGE(_status, message)      \
-    ("[" #_status "] " message)
 
 
 OperationStatus treeVerify(BinaryTree* tree);
@@ -35,7 +31,7 @@ OperationStatus treeVerify(BinaryTree* tree);
 OperationStatus createNode(TreeNode** node);
 
 
-OperationStatus treeConstructor(BinaryTree* tree, const char* identifier, const char* name,
+OperationStatus treeConstructor(BinaryTree* tree, const char* name,
                                 const char* file, const char* function, int line);
 
 

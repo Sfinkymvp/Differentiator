@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #include "diff/diff_process.h"
-#include "diff/diff_dsl.h"
+#include "diff/diff_create.h"
 #include "diff/diff_defs.h"
 #include "diff/diff.h"
 
@@ -36,8 +36,6 @@ static TreeNode* diffOp(Differentiator* diff, TreeNode* node, size_t var_idx);
 static TreeNode* copyNode(const TreeNode* node);
 static TreeNode* nodeDup(const TreeNode* node);
 
-
-static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node);
 
 static TreeNode* computeAddDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
 static TreeNode* computeSubDerivative(Differentiator* diff, TreeNode* node, size_t var_idx);
@@ -174,11 +172,6 @@ static TreeNode* nodeDup(const TreeNode* node)
     return new_node;
 }
 
-
-static inline void printDerivativeExpression(Differentiator* diff, TreeNode* node)
-{
-    assert(diff); assert(node);
-}
 
 // ------------------------------------------------------------------------------------------------
 // OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_POS, OP_LOG
@@ -434,3 +427,36 @@ static TreeNode* computeAcothDerivative(Differentiator* diff, TreeNode* node, si
     );
     return MUL(DIV(CNUM(1), SUB(CNUM(1), POW(cR, CNUM(2)))), dR);
 }
+
+
+// undef diff_create.h
+
+#undef CNUM
+#undef CVAR
+
+#undef ADD
+#undef SUB
+#undef MUL
+#undef DIV
+#undef POW
+#undef LOG
+
+#undef SIN
+#undef COS
+#undef TAN
+#undef COT
+
+#undef ASIN
+#undef ACOS
+#undef ATAN
+#undef ACOT
+
+#undef SINH
+#undef COSH
+#undef TANH
+#undef COTH
+
+#undef ASINH
+#undef ACOSH
+#undef ATANH
+#undef ACOTH

@@ -57,7 +57,7 @@ const simplifierFunc SIMPLIFIERS[OP_MAX_COUNT] = {
 
 void optimizeTree(Differentiator* diff, size_t tree_idx)
 {
-    assert(diff); assert(diff->forest.trees); assert(tree_idx < diff->forest.count);
+    assert(diff); assert(diff->forest.trees); assert(tree_idx <= diff->forest.count);
 
     printTex(diff, "\\subsection{Оптимизация}\n");
     bool changed = true;
@@ -69,7 +69,6 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
 
     TREE_DUMP(diff, tree_idx, STATUS_OK, "source tree");
     printTex(diff, 
-        "\\newpage\n"
         "\\subsection{Результат оптимизации}\n");
     printExpression(diff, tree_idx);
 }

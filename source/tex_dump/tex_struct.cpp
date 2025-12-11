@@ -48,13 +48,32 @@ void texInit(Differentiator* diff)
 
 static void printTitle(Differentiator* diff)
 {
-    assert(diff) ;
+    assert(diff);
 
-    printTex(diff, 
-        "\\title{Дифференцирование n раз дифференцируемой "
-        "в точке пересечения матана и алгема сложной непрерывной функции}\n"
-        "\\author{Затехано вручную sfinkymvp}\n"
-        "\\date{Документ сгенерирован: \\today}\n");
+    printTex(diff,
+        "\\title{\n"
+        "\\small{\\textsc{Институт системного дифференцирования и прикладной математики}}\\\\\n"
+        "\\vspace{3cm}\n"
+        "\\textbf{\\Huge Автоматический расчленитель функций}\\\\\n"
+        "\\vspace{0.5cm}\n"
+        "\\large{или как превратить красивую формулу в хаос из скобок}\\\\\n"
+        "\\vspace{0.2cm}\n"
+        "}\n");
+
+    printTex(diff, "\\author{\n"
+    "\\textbf{Главный архитектор:}\\\\\n"
+    "sfinkymvp (повелитель деревьев)\\\\\n"
+    "\\vspace{0.5cm}\n"
+    "\\textbf{Моральная поддержка:}\\\\\n"
+    "Отл 2 за тесты по бжд и 25 посещений\\\\\n"
+    "\\vspace{0.5cm}\n"
+    "\\textbf{Спонсор исследования:}\\\\\n"
+    "Горящий дедлайн и сегфолт в 6 утра\n"
+    "}\n");
+
+    printTex(diff,
+        "\\date{\\today\\\\\n\\small{(день, когда это наконец (не)заработало)}}\n"
+    "}\n");
 }
 
 
@@ -64,10 +83,18 @@ void printIntroduction(Differentiator* diff)
 
     printTex(diff, 
         "\\chapter{Введение}\n"
-        "В этой дипломной работе студентом честно предоставлено вручную \n"
-        "написанное исследование функции. Далее вы можете увидеть исходную функцию:\n");
-    
+        "В данной научно-исследовательской работе была предпринята попытка "
+        "обучить таракана с кухни основам математического анализа. "
+        "В процессе обучения таракан превзошел недогадливых физтехов и смог "
+        "зафачить их по теме непрерывности функции.\n\n");
+   
+    printTex(diff,
+        "Приступим к изучению возможно самой сложной ранее невиданной функции, в каком то из измерений она выглядит так:\n");
     printExpression(diff, 0);
+
+    printTex(diff,
+        "Пока таракан фачил недогадливого физтеха и его друга всероса, он пробежался по столу и нарисовал "
+        "какую-то непонятную линию:\n");
     printPlot(diff, 0);
 }
 
@@ -109,7 +136,6 @@ OperationStatus texClose(Differentiator* diff)
     assert(fclose(TEX_FILE) == 0);
     TEX_FILE = NULL;
 
-    printf("hello!\n");
     char command[BUFFER_SIZE * 2] = {}; 
     snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode -output-directory=%s %s > /dev/null",
         TEX_DIRECTORY, diff->tex_dump.filename);

@@ -120,7 +120,6 @@ struct TreeNode {
 
 typedef struct {
     TreeNode* root;
-    char* identifier;
     CreationInfo origin;
 } BinaryTree;
 

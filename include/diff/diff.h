@@ -6,6 +6,9 @@
 #include "status.h"
 
 
+void printErrorStatus(OperationStatus status);
+
+
 OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx);
 
 

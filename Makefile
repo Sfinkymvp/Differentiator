@@ -8,7 +8,7 @@ FLAGS = -ggdb3 -std=c++17 -O0 \
 	-Wpointer-arith -Winit-self -Wredundant-decls -Wshadow \
 	-Wsign-conversion -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=2 \
 	-Wsuggest-attribute=noreturn -Wsuggest-final-methods -Wsuggest-final-types \
-	-Wsuggest-override -Wswitch-default -Wswitch-enum -Wundef \
+	-Wsuggest-override -Wswitch-default -Wundef \
 	-Wunreachable-code -Wunused -Wuseless-cast -Wvariadic-macros \
 	-Wno-literal-suffix -Wno-missing-field-initializers \
 	-Wno-narrowing -Wno-old-style-cast -Wno-varargs \
@@ -25,9 +25,10 @@ SRCDIR = source
 FILES = $(OBJDIR)/diff/main.o $(OBJDIR)/diff/diff_var_table.o $(OBJDIR)/tree/tree_io.o \
 	$(OBJDIR)/tree/tree.o $(OBJDIR)/diff/diff.o $(OBJDIR)/diff/diff_process.o \
 	$(OBJDIR)/diff/diff_evaluate.o $(OBJDIR)/diff/diff_optimize.o $(OBJDIR)/tree/tree_parse.o \
-	$(OBJDIR)/diff/diff_taylor.o  $(OBJDIR)/diff/diff_dsl.o $(OBJDIR)/diff/diff_cmd_args.o
-DEBUG_FILES = $(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o \
+	$(OBJDIR)/diff/diff_taylor.o  $(OBJDIR)/diff/diff_create.o $(OBJDIR)/diff/diff_cmd_args.o \
+	$(OBJDIR)/graph_dump/graph_generator.o $(OBJDIR)/graph_dump/html_builder.o \
 	$(OBJDIR)/tex_dump/tex_struct.o $(OBJDIR)/tex_dump/tex_expression.o $(OBJDIR)/tex_dump/plot_generator.o
+
 FLAGS += -Iinclude
 
 OUTPUT_NAME = diffuzor
@@ -43,12 +44,8 @@ run:
 	@cd $(BUILDDIR) && ./$(OUTPUT_NAME)
 
 
-debug: FLAGS += -DDEBUG
-debug: $(FILES) $(DEBUG_FILES)
-	@g++ $(FILES) $(DEBUG_FILES) $(FLAGS) -o $(BUILDDIR)/$(OUTPUT_NAME)
-
-
-release: $(FILES)
+diff: FLAGS += -DDEBUG
+diff: $(FILES) $(DEBUG_FILES)
 	@g++ $(FILES) $(FLAGS) -o $(BUILDDIR)/$(OUTPUT_NAME)
 
 

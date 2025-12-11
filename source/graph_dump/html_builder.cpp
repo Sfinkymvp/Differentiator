@@ -9,6 +9,8 @@
 
 #include "diff/diff_defs.h"
 
+#include "status.h"
+
 #include "tree/tree.h"
 
 
@@ -122,6 +124,7 @@ static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info
     assert(diff); assert(diff->forest.trees); assert(tree);
     assert(tree->origin.name); assert(tree->origin.file); assert(tree->origin.function);
     assert(info); assert(info->message); assert(info->file); assert(info->function); 
+    assert(info->status < ERROR_COUNT);
 
     fprintf(GRAPH_FILE, "\t<h1>TREE DUMP #%03zu</h1>\n", diff->graph_dump.image_counter);
     fprintf(GRAPH_FILE, "\t<h2>Dump {%s:%d} called from %s()</h2>\n",
@@ -129,7 +132,7 @@ static void writeTreeInfo(Differentiator* diff, BinaryTree* tree, DumpInfo* info
     fprintf(GRAPH_FILE, "\t<h2>Tree \"%s\" {%s:%d} created in %s()</h2>\n",
         tree->origin.name, tree->origin.file,
         tree->origin.line, tree->origin.function);
-    fprintf(GRAPH_FILE, "\t<h3>STATUS:   NONE</h3>\n");
+    fprintf(GRAPH_FILE, "\t<h3>STATUS: %s </h3>\n", ErrorTable[info->status].status_string);
     fprintf(GRAPH_FILE, "\t<h3>MESSAGE: %s</h3>\n", info->message);
 }
 

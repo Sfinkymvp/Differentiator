@@ -1,5 +1,5 @@
-#ifndef DIFF_DSL_H_
-#define DIFF_DSL_H_
+#ifndef DIFF_CREATE_H_
+#define DIFF_CREATE_H_
 
 
 #include "diff/diff_defs.h"
@@ -44,4 +44,4 @@ TreeNode* createVar(size_t var_idx);
 TreeNode* createNum(double value);
 
 
-#endif // DIFF_DSL_H_
+#endif // DIFF_CREATE_H_

@@ -24,17 +24,16 @@ int main(const int argc, const char** argv)
 {
     Differentiator diff = {};
     OperationStatus status = diffConstructor(&diff, argc, argv);
-    if (status != STATUS_OK)
+    if (status != STATUS_OK) {
+        printErrorStatus(status);
         return 1;
+    }
 
     status = diffLoadExpression(&diff);
     if (status == STATUS_OK) {
         printIntroduction(&diff);
     }
 
-    printf("diff var value: %g\n", diff.var_table.variables[diff.args.derivative_info.diff_var_idx].value);
-    printf("taylor center value: %g\n", diff.args.taylor_info.center);
-    TREE_DUMP(&diff, 0, status, "source tree");
     if (status == STATUS_OK && diff.args.derivative_info.compute) {
         status = defineVariables(&diff);
     }
@@ -43,8 +42,6 @@ int main(const int argc, const char** argv)
             fprintf(diff.tex_dump.file, "\\chapter{%zu-я производная}", index);
             status = diffCalculateDerivative(&diff, 0);
             if (status != STATUS_OK) {
-                printf("lox\n");
-                printf("lox\n");
                 break;
             }
 
@@ -61,5 +58,10 @@ int main(const int argc, const char** argv)
     }
 
     diffDestructor(&diff);
-    return 0;
+    if (status != STATUS_OK) {
+        printErrorStatus(status);
+        return 1;
+    } else {
+        return 0;
+    }
 }

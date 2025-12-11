@@ -43,7 +43,6 @@ OperationStatus defineVariables(Differentiator* diff)
     for (size_t index = 0; index < diff->var_table.count; index++) {
         printf("Value of variable '%s': ", diff->var_table.variables[index].name);
         if (scanf("%lf", &diff->var_table.variables[index].value) != 1) {
-            fprintf(stderr, "Error: variable %s not defined\n", diff->var_table.variables[index].name);
             return STATUS_IO_INVALID_USER_INPUT;
         }
     }

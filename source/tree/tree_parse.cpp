@@ -157,7 +157,7 @@ TreeNode* getVariable(Differentiator* diff, char** buffer)
 {
     assert(diff); assert(diff->var_table.variables); assert(buffer); assert(*buffer);
 
-    printf("%s\n", *buffer);
+    //printf("%s\n", *buffer);
     if (isalpha(**buffer)) {
         char* variable_end = *buffer;
         while (isalpha(*variable_end) || isdigit(*variable_end) || *variable_end == '_')
