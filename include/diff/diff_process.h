@@ -4,7 +4,7 @@
 #include "diff/diff_defs.h"
 
 
-TreeNode* diffNode(Differentiator* diff, TreeNode* node, size_t var_idx);
+TreeNode* diffNode(Differentiator* diff, TreeNode* node);
 
 
 bool containsVariable(TreeNode* node, size_t var_idx);

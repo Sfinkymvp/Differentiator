@@ -77,17 +77,19 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
     char graph_dot_file[BUFFER_SIZE * 2] = {};
     char graph_svg_file[BUFFER_SIZE * 2] = {};
 
-    snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.dot",
-             DIRECTORY, diff->graph_dump.image_counter);
-    snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.svg",
-             DIRECTORY, diff->graph_dump.image_counter);
+    if (diff->tex_dump.print_steps) {
+        snprintf(graph_dot_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.dot",
+                DIRECTORY, diff->graph_dump.image_counter);
+        snprintf(graph_svg_file, BUFFER_SIZE * 2, "%s/tree_graph_%03zu.svg",
+                DIRECTORY, diff->graph_dump.image_counter);
 
-    generateGraph(diff, tree_idx, graph_dot_file);
-    convertDotToSvg(graph_dot_file, graph_svg_file);
+        generateGraph(diff, tree_idx, graph_dot_file);
+        convertDotToSvg(graph_dot_file, graph_svg_file);
 
-    char command[BUFFER_SIZE * 3] = {};
-    snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
-    system(command);
+        char command[BUFFER_SIZE * 3] = {};
+        snprintf(command, BUFFER_SIZE * 3, "rm %s", graph_dot_file);
+        system(command);
+    }
 
     createHtmlDump(diff, &diff->forest.trees[tree_idx], &info, graph_svg_file);
 
@@ -108,9 +110,11 @@ static void createHtmlDump(Differentiator* diff, BinaryTree* tree, DumpInfo* inf
     writeTreeInfo(diff, tree, info);
 
     fprintf(GRAPH_FILE, "<div style=\"overflow-x: auto; white-space: nowrap;\">\n");
-    fprintf(GRAPH_FILE, "<img src=\"tree_graph_%03zu.svg\" "
-        "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
-        diff->graph_dump.image_counter);
+    if (diff->tex_dump.print_steps) {
+        fprintf(GRAPH_FILE, "<img src=\"%s\" "
+            "style=\"zoom:0.65; -moz-transform:scale(0.1); -moz-transform-origin:top left;\">\n",
+            image);
+    }
     fprintf(GRAPH_FILE, "</div>\n");
 
     fprintf(GRAPH_FILE, "<hr style=\"margin: 40px 0; border: 2px solid #ccc;\">\n");

@@ -59,7 +59,9 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
 {
     assert(diff); assert(diff->forest.trees); assert(tree_idx <= diff->forest.count);
 
-    printTex(diff, "\\subsection{Оптимизация}\n");
+    if (diff->tex_dump.print_steps) {
+        printTex(diff, "\\subsection{Оптимизация}\n");
+    }
     bool changed = true;
     while (changed) {
         FoldStatus status = foldConstants(diff, diff->forest.trees[tree_idx].root, tree_idx);
@@ -68,9 +70,12 @@ void optimizeTree(Differentiator* diff, size_t tree_idx)
     }  
 
     TREE_DUMP(diff, tree_idx, STATUS_OK, "source tree");
-    printTex(diff, 
-        "\\subsection{Результат оптимизации}\n");
-    printExpression(diff, tree_idx);
+// Если tree_idx == diff->forest.count, то в дереве разложение, а его оптимизацию можно не выводить
+    if (tree_idx < diff->forest.count) {
+        printTex(diff, 
+            "\\subsection{Результат оптимизации}\n");
+        printExpression(diff, tree_idx);
+    }
 }
 
 
@@ -220,8 +225,10 @@ static bool setNodeToChild(Differentiator* diff, TreeNode* node, size_t tree_idx
     assert(diff); assert(node);
 
     diff->highlight_node = node;
-    printTex(diff, "\\begin{dmath*}\n"
-        "%n = ", diff->forest.trees[tree_idx].root);
+    if (diff->tex_dump.print_steps) {
+        printTex(diff, "\\begin{dmath*}\n"
+            "%n = ", diff->forest.trees[tree_idx].root);
+    }
 
     if (is_left) {
         deleteBranch(NR);
@@ -233,8 +240,10 @@ static bool setNodeToChild(Differentiator* diff, TreeNode* node, size_t tree_idx
         replaceWithChild(node, NR);
     }
 
+    if (diff->tex_dump.print_steps) {
     printTex(diff, "%n\n"
         "\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
+    }
     diff->highlight_node = NULL;
 
     return true;
@@ -261,8 +270,10 @@ static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, 
     assert(diff); assert(node);
 
     diff->highlight_node = node;
-    printTex(diff, "\\begin{dmath*}\n"
-        "%n = ", diff->forest.trees[tree_idx].root);
+    if (diff->tex_dump.print_steps) {
+        printTex(diff, "\\begin{dmath*}\n"
+            "%n = ", diff->forest.trees[tree_idx].root);
+    }
 
     deleteBranch(NL);
     NL = NULL;
@@ -271,8 +282,10 @@ static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, 
     node->type = NODE_NUM;
     node->value.num_val = num; 
 
-    printTex(diff, "%n\n"
-        "\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
+    if (diff->tex_dump.print_steps) {
+        printTex(diff, "%n\n"
+            "\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
+    }
     diff->highlight_node = NULL;
 
     return true;
@@ -281,7 +294,9 @@ static bool setNodeToNum(Differentiator* diff, TreeNode* node, size_t tree_idx, 
 
 static bool isNum(TreeNode* node, double num)
 {
-    assert(node);
+    if (!node) {
+        return false;
+    }
 
     return node->type == NODE_NUM && (fabs(node->value.num_val - num) < EPS);
 }

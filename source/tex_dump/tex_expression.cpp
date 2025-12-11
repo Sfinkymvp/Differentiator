@@ -16,7 +16,7 @@ static void printAdd(Differentiator* diff, TreeNode* node);
 
 static bool needParentheses(TreeNode* node);
 static bool isBinaryOperator(OpType op);
-static size_t getPriority(TreeNode* node);
+static size_t getOperatorPriority(TreeNode* node);
 
 
 void printExpression(Differentiator* diff, size_t tree_idx)
@@ -111,7 +111,7 @@ static void printNode(Differentiator* diff, TreeNode* node)
 static void printOperator(Differentiator* diff, TreeNode* node)
 {
     assert(diff); assert(node); assert(node->type == NODE_OP);
-    assert(node->value.op != OP_NONE); assert(node->right);
+    assert(node->value.op != OP_NONE);
 
     switch (node->value.op) {
         case OP_ADD: printAdd(diff, node); break;
@@ -152,8 +152,7 @@ static void printAdd(Differentiator* diff, TreeNode* node)
 {
     assert(diff); assert(node); assert(diff->var_table.count != 0);
 
-    bool is_remainder = node->right && node->right->type == NODE_NUM &&
-        fabs(node->right->value.num_val) < EPS;
+    bool is_remainder = node->right == NULL;
 
     size_t diff_var_idx = diff->args.derivative_info.diff_var_idx;
     printTex(diff, "%n", node->left);
@@ -180,13 +179,13 @@ static bool needParentheses(TreeNode* node)
     if (node->type == NODE_VAR) {
         return false;
     }
+
     if (node->type == NODE_NUM) {
         return node->value.num_val < 0;
     }
 
-    OpType node_op = node->value.op;
     OpType parent_op = node->parent->value.op;
-
+    OpType node_op = node->value.op;
     if (!isBinaryOperator(parent_op)) {
         if (node->type == NODE_OP && isBinaryOperator(node_op)) {
             return true;
@@ -194,8 +193,8 @@ static bool needParentheses(TreeNode* node)
         return false;
     }
 
-    size_t node_priority = getPriority(node);
-    size_t parent_priority = getPriority(node->parent);
+    size_t node_priority = getOperatorPriority(node);
+    size_t parent_priority = getOperatorPriority(node->parent);
     
     if (parent_priority > node_priority) {
         return true;
@@ -238,27 +237,19 @@ static bool isBinaryOperator(OpType op)
 }
 
 
-static size_t getPriority(TreeNode* node)
+static size_t getOperatorPriority(TreeNode* node)
 {
     assert(node);
     
-    if (node->type == NODE_OP) {
-        OpType op = node->value.op;
-        if (op == OP_ADD || op == OP_SUB) {
-            return 1;
-        } else if (op == OP_MUL || op == OP_DIV) {
-            return 2;
-        } else if (op == OP_POW) {
-            return 3;
-        } else {
-            return 5;
-        }
+    OpType op = node->value.op;
+    if (op == OP_ADD || op == OP_SUB) {
+        return 1;
+    } else if (op == OP_MUL || op == OP_DIV) {
+        return 2;
+    } else if (op == OP_POW) {
+        return 3;
     } else {
-        if (node->type == NODE_NUM && node->value.num_val < 0) {
-            return 4;
-        } else {
-            return 0;
-        }
+        return 4;
     }
 }
 

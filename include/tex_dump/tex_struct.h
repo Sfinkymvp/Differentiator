@@ -20,6 +20,9 @@ void printIntroduction(Differentiator* diff);
 void printPlot(Differentiator* diff, size_t tree_idx);
 
 
+void printTaylorSeries(Differentiator* diff, const char* output_filename, size_t tree_idx);
+
+
 OperationStatus texClose(Differentiator* diff);
 
 

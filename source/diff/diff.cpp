@@ -36,6 +36,7 @@ const ErrorInfo ErrorTable[ERROR_COUNT] = {
 // Differentiation Errors
     CREATE_ERROR_INFO(STATUS_DIFF_CALCULATE_ERROR,    "An error occurred during expression calculation."),
     CREATE_ERROR_INFO(STATUS_DIFF_UNKNOWN_VARIABLE,   "Differentiation attempted on an unknown variable."),
+    CREATE_ERROR_INFO(STATUS_DIFF_CONST_EXPRESSION,   "There are no variables in the passed expression."),
 // System Errors
     CREATE_ERROR_INFO(STATUS_SYSTEM_OUT_OF_MEMORY,    "Failed to allocate memory (Out of Memory)."),
     CREATE_ERROR_INFO(STATUS_SYSTEM_CALL_ERROR,       "Error during execution of a system call."),
@@ -63,27 +64,28 @@ void printErrorStatus(OperationStatus status)
 }
 
 
-OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx)
+OperationStatus diffCalculateDerivative(Differentiator* diff, size_t tree_idx)
 {
-    assert(diff); assert(diff->forest.trees); 
+    assert(diff); assert(diff->forest.trees); assert(tree_idx < diff->forest.count);
 
     if (diff->forest.count >= diff->forest.capacity - 1)
         diffForestResize(diff);
     assert(diff->forest.count < diff->forest.capacity);
 
-    printTex(diff, "\n\\subsection{Вычисление}\n");
-    TREE_CREATE(&diff->forest.trees[diff->forest.count]);
-    diff->forest.trees[diff->forest.count].root = diffNode(diff,
-        diff->forest.trees[diff->forest.count - 1].root, var_idx);
-    if (!diff->forest.trees[diff->forest.count].root)
+    if (diff->tex_dump.print_steps) {
+        printTex(diff, "\n\\subsection{Вычисление}\n");
+    }
+    TREE_CREATE(&diff->forest.trees[tree_idx + 1]);
+    diff->forest.trees[tree_idx + 1].root = diffNode(diff,
+        diff->forest.trees[tree_idx].root);
+    if (!diff->forest.trees[tree_idx + 1].root)
         return STATUS_DIFF_CALCULATE_ERROR;
+    TREE_VERIFY(diff, tree_idx + 1, "differentiation process");
 
     printTex(diff, "\n\\subsection{Результат вычисления}\n");
     printExpression(diff, diff->forest.count);
+
     diff->forest.count++;
-
-    TREE_VERIFY(diff, diff->forest.count - 1, "diff tree");
-
     return STATUS_OK;
 }
 
@@ -114,6 +116,7 @@ OperationStatus diffConstructor(Differentiator* diff, const int argc, const char
     diff->forest.count = 0;
     diff->highlight_node = NULL;
     diff->graph_dump.file = NULL;
+    diff->tex_dump.print_steps = true;
     diff->tex_dump.range.x_min = -5;
     diff->tex_dump.range.x_max = 5;
     diff->tex_dump.range.y_min = -10;
@@ -155,7 +158,10 @@ void diffDestructor(Differentiator* diff)
 
     assert(fclose(diff->graph_dump.file) == 0);
 
-    texClose(diff);
+    OperationStatus status = texClose(diff);
+    if (status != STATUS_OK) {
+        printErrorStatus(status);
+    }
 
     diff->graph_dump.file = NULL;
 }

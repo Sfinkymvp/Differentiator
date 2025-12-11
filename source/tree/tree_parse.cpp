@@ -11,17 +11,24 @@
 #include "diff/diff_var_table.h"
 
 
+static TreeNode* getBinaryFunction(Differentiator* diff, char** buffer, OpInfo op_info);
+static TreeNode* getUnaryFunction(Differentiator* diff, char** buffer, OpInfo op_info);
+
 static TreeNode* createOperator(OpType op, TreeNode* left, TreeNode* right);
 static TreeNode* createVariable(size_t var_idx);
 static TreeNode* createNumber(double value);
 static bool isReservedFunctionName(char* str, size_t len);
+
+static void skipWhitespaces(char** buffer);
 
 
 TreeNode* getTree(Differentiator* diff, char** buffer)
 {
     assert(diff); assert(buffer); assert(*buffer);
     
+    skipWhitespaces(buffer);
     TreeNode* node = getExpression(diff, buffer);
+    skipWhitespaces(buffer);
     if (**buffer != '$') {
         fprintf(stderr, "Syntax error in getTree!\n");
         if (node) deleteBranch(node);
@@ -38,9 +45,13 @@ TreeNode* getExpression(Differentiator* diff, char** buffer)
     assert(diff); assert(buffer); assert(*buffer);
 
     TreeNode* node_1= getTerm(diff, buffer);
+    skipWhitespaces(buffer);
+
     while (**buffer == '+' || **buffer == '-') {
         char op = **buffer;
         (*buffer)++;
+
+        skipWhitespaces(buffer);
         TreeNode* node_2 = getTerm(diff, buffer);
 
         OpType op_type = OP_NONE;
@@ -60,8 +71,9 @@ TreeNode* getExpression(Differentiator* diff, char** buffer)
             deleteBranch(node_2);
             return NULL;
         }
-
         node_1 = op_node;
+
+        skipWhitespaces(buffer);
     }
 
     return node_1;
@@ -73,9 +85,13 @@ TreeNode* getTerm(Differentiator* diff, char** buffer)
     assert(diff); assert(buffer); assert(*buffer);
 
     TreeNode* node_1 = getPower(diff, buffer);
+    skipWhitespaces(buffer);
+
     while (**buffer == '*' || **buffer == '/') {
         char op = **buffer;
         (*buffer)++;
+
+        skipWhitespaces(buffer);
         TreeNode* node_2 = getPower(diff, buffer);
 
         OpType op_type = OP_NONE;
@@ -95,9 +111,9 @@ TreeNode* getTerm(Differentiator* diff, char** buffer)
             deleteBranch(node_2);
             return NULL;
         }
-
- 
         node_1 = op_node;
+
+        skipWhitespaces(buffer);
     }
 
     return node_1;
@@ -109,8 +125,12 @@ TreeNode* getPower(Differentiator* diff, char** buffer)
     assert(diff); assert(buffer); assert(*buffer);
 
     TreeNode* node_1 = getPrimary(diff, buffer);
+    skipWhitespaces(buffer);
+
     while (**buffer == '^') {
         (*buffer)++;
+
+        skipWhitespaces(buffer);
         TreeNode* node_2 = getPrimary(diff, buffer);
 
         TreeNode* op_node = createOperator(OP_POW, node_1, node_2);
@@ -118,8 +138,9 @@ TreeNode* getPower(Differentiator* diff, char** buffer)
             deleteBranch(node_2);
             return NULL;
         }
-
         node_1 = op_node;
+
+        skipWhitespaces(buffer);
     }
 
     return node_1;
@@ -132,7 +153,11 @@ TreeNode* getPrimary(Differentiator* diff, char** buffer)
 
     if (**buffer == '(') {
         (*buffer)++;
+
+        skipWhitespaces(buffer);
         TreeNode* node = getExpression(diff, buffer);
+        skipWhitespaces(buffer);
+
         (*buffer)++;
         return node;
     }
@@ -194,6 +219,7 @@ TreeNode* getFunction(Differentiator* diff, char** buffer)
         size_t len = (size_t)(function_end - *buffer);
         bool is_function = false;
         size_t index = 0;
+
         for (; index < OP_TABLE_COUNT; index++) {
             const char* existing_name = OP_TABLE[index].symbol;
             if (strncmp(*buffer, existing_name, len) == 0 && existing_name[len] == '\0') {
@@ -202,29 +228,94 @@ TreeNode* getFunction(Differentiator* diff, char** buffer)
             }
         }
         if (!is_function) return NULL;
-
         *buffer += len;
-        if (**buffer != '(') return NULL;
-        (*buffer)++;
 
-        TreeNode* expression = getExpression(diff, buffer);
-        if (expression == NULL) return NULL;
-        if (**buffer != ')') {
-            deleteBranch(expression);
-            return NULL;
+        if (OP_TABLE[index].op == OP_LOG) {
+            return getBinaryFunction(diff, buffer, OP_TABLE[index]);
+        } else {
+            return getUnaryFunction(diff, buffer, OP_TABLE[index]);
         }
-        (*buffer)++;
-
-        TreeNode* node = createOperator(OP_TABLE[index].op, NULL, expression);
-        if (node == NULL) {
-            deleteBranch(expression);
-            return NULL;
-        }
-
-        return node;
     } else {
         return NULL;
     }
+}
+
+
+static TreeNode* getUnaryFunction(Differentiator* diff, char** buffer, OpInfo op_info)
+{
+    assert(diff); assert(buffer); assert(*buffer);
+
+    skipWhitespaces(buffer);
+
+    if (**buffer != '(') return NULL;
+    (*buffer)++;
+
+    skipWhitespaces(buffer);
+
+    TreeNode* expression = getExpression(diff, buffer);
+    if (expression == NULL) return NULL;
+
+    skipWhitespaces(buffer);
+
+    if (**buffer != ')') {
+        deleteBranch(expression);
+        return NULL;
+    }
+    (*buffer)++;
+
+    TreeNode* node = createOperator(op_info.op, NULL, expression);
+    if (node == NULL) {
+        deleteBranch(expression);
+        return NULL;
+    }
+
+    return node;
+}
+
+
+static TreeNode* getBinaryFunction(Differentiator* diff, char** buffer, OpInfo op_info)
+{
+    assert(diff); assert(buffer); assert(*buffer);
+
+    skipWhitespaces(buffer);
+
+    if (**buffer != '(') return NULL;
+    (*buffer)++;
+
+    skipWhitespaces(buffer);
+
+    TreeNode* left_expression = getExpression(diff, buffer);
+    if (left_expression == NULL) return NULL;
+
+    skipWhitespaces(buffer);
+
+    if (**buffer != ',') {
+        deleteBranch(left_expression);
+        return NULL;
+    }
+    (*buffer)++;
+
+    skipWhitespaces(buffer);
+
+    TreeNode* right_expression = getExpression(diff, buffer);
+    if (right_expression == NULL) return NULL;
+    if (**buffer != ')') {
+        deleteBranch(right_expression);
+        deleteBranch(left_expression);
+        return NULL;
+    }
+    (*buffer)++;
+
+    skipWhitespaces(buffer);
+
+    TreeNode* node = createOperator(op_info.op, left_expression, right_expression);
+    if (node == NULL) {
+        deleteBranch(left_expression);
+        deleteBranch(right_expression);
+        return NULL;
+    }
+
+    return node;
 }
 
 
@@ -313,3 +404,12 @@ static bool isReservedFunctionName(char* str, size_t len)
     return false;
 }
 
+
+static void skipWhitespaces(char** buffer)
+{
+    assert(buffer); assert(*buffer);
+
+    while (isspace(**buffer)) {
+        (*buffer)++;
+    }
+}

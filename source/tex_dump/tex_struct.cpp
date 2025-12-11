@@ -73,7 +73,7 @@ static void printTitle(Differentiator* diff)
 
     printTex(diff,
         "\\date{\\today\\\\\n\\small{(день, когда это наконец (не)заработало)}}\n"
-    "}\n");
+    );
 }
 
 
@@ -127,6 +127,32 @@ void printPlot(Differentiator* diff, size_t tree_idx)
 }
 
 
+void printTaylorSeries(Differentiator* diff, const char* output_filename, size_t tree_idx)
+{
+    assert(diff); assert(diff->forest.trees); assert(output_filename);
+    assert(tree_idx == diff->forest.count);
+
+    printTex(diff,
+        "\\chapter{Разложение функции по формуле Тейлора}\n"
+        "Исходное выражение имеет следующий вид:\n\\begin{dmath*}\n%n\n\\end{dmath*}\n",
+        diff->forest.trees[0].root);
+
+    printTex(diff, "Выполним разложение функции по формуле Тейлора в окрестности точки $%s_0 = %g$ "
+        "с остаточным членом в форме Пеано:\n", diff->var_table.variables[diff->args.derivative_info.diff_var_idx],
+        diff->args.taylor_info.center);
+
+    printTex(diff, "\\begin{dmath*}\n%n\n\\end{dmath*}\n", diff->forest.trees[tree_idx].root);
+
+    printTex(diff,
+        "Сравнительный график исходной функции и ее разложения представлен ниже:\n"
+        "\\begin{figure}[H]\n"
+        "\\centering\n"
+        "\\includegraphics[width=0.8\\textwidth]{%s}\n"
+        "\\caption{Сравнение исходной функции и ее разложения по формуле Тейлора.}\n"
+        "\\end{figure}\n", diff->args.taylor_info.center, output_filename);
+}
+
+
 OperationStatus texClose(Differentiator* diff)
 {
     assert(diff);
@@ -140,6 +166,9 @@ OperationStatus texClose(Differentiator* diff)
     snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode -output-directory=%s %s > /dev/null",
         TEX_DIRECTORY, diff->tex_dump.filename);
     int result = system(command);
+    if (result != 0) {
+        return STATUS_SYSTEM_CALL_ERROR;
+    }
     result = system(command);
     if (result != 0) {
         return STATUS_SYSTEM_CALL_ERROR;
@@ -159,6 +188,10 @@ OperationStatus texClose(Differentiator* diff)
 static void openTexDumpFile(Differentiator* diff)
 {
     assert(diff);
+
+    char command[BUFFER_SIZE] = "";
+    snprintf(command, BUFFER_SIZE, "rm -rf %s/images", TEX_DIRECTORY);
+    system(command);
 
     snprintf(diff->tex_dump.filename, BUFFER_SIZE, "%s.tex", TEX_FILENAME);
 

@@ -37,11 +37,12 @@ OUTPUT_NAME = diffuzor
 clean: 
 	@echo "cleaning up object files..."
 	@rm -rf $(OBJDIR)
+	@echo "cleaning up executable file"
 	@rm $(BUILDDIR)/$(OUTPUT_NAME)
-
-
-run:
-	@cd $(BUILDDIR) && ./$(OUTPUT_NAME)
+	@echo "cleaning up dump files"
+	@rm $(BUILDDIR)/tex/differentiation*
+	@rm -rf $(BUILDDIR)/images
+	@rm -rf $(BUILDDIR)/tex/images
 
 
 diff: FLAGS += -DDEBUG

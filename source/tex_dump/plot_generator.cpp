@@ -19,7 +19,7 @@ const char* GNUPLOT_DATA_FILENAME =    "plot_data";
 const char* GNUPLOT_SCRIPT_FILENAME =  "plot_script";
 
 
-double GNUPLOT_SHIFT = 0.01;
+double GNUPLOT_SHIFT = 0.001;
 
 
 static OperationStatus processPlotting(Differentiator* diff, const char* output_filename,
@@ -184,6 +184,14 @@ static void printScriptInfo(Differentiator* diff, const char* output_filename,
             fprintf(script_file, " title 'Функция'");
         } else if (tree_indexes[index] == diff->forest.count) {
             fprintf(script_file, " title 'Разложение'");
+
+            double x = diff->args.taylor_info.center;
+            setVariableValue(diff, diff->args.derivative_info.diff_var_idx, x);
+            double y = evaluateNode(diff, diff->forest.trees[tree_indexes[index]].root);
+
+            fprintf(script_file, 
+                ", \\\n    \"\" using (%lf):(%lf) with points pt 3 ps 1 lc 'red' "
+                "title 'Центр разложения'", x, y);
         } else {
             fprintf(script_file, " title '%zu-я производная'", tree_indexes[index]);
         }

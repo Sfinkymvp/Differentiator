@@ -4,8 +4,10 @@
 
 #include "diff/diff_defs.h"
 
+#include "status.h"
 
-void diffTaylorSeries(Differentiator* diff);
+
+OperationStatus diffTaylorSeries(Differentiator* diff);
 
 
 TreeNode* createTaylorTree(Differentiator* diff, size_t derivative_counter);

@@ -20,10 +20,11 @@
 
 #include "tree/tree.h"
 
+
 static double factorial(size_t n);
 
 
- void diffTaylorSeries(Differentiator* diff)
+OperationStatus diffTaylorSeries(Differentiator* diff)
 {
     assert(diff); assert(diff->forest.trees);
 
@@ -32,33 +33,28 @@ static double factorial(size_t n);
 
     setVariableValue(diff, diff->args.derivative_info.diff_var_idx, diff->args.taylor_info.center);
     diff->forest.trees[tree_idx].root = createTaylorTree(diff, 0);
-    assert(diff->forest.trees[tree_idx].root);
+    if (diff->forest.trees[tree_idx].root == NULL)
+        return STATUS_SYSTEM_OUT_OF_MEMORY;
     TREE_DUMP(diff, tree_idx, STATUS_OK, "Creating Taylor Tree");
 
-    printTex(diff,
-        "\\chapter{Разложение функции по формуле Тейлора}\n"
-        "Исходное выражение имеет следующий вид:\n\\begin{dmath*}\n%n\n\\end{dmath*}\n",
-        diff->forest.trees[0].root);
-    printTex(diff, "Выполним разложение функции по формуле Тейлора в окрестности точки $x_0 = %g$ "
-        "с остаточным членом в форме Пеано:\n", diff->args.taylor_info.center);
-    printTex(diff, "\\begin{dmath*}\n%n\n\\end{dmath*}\n", diff->forest.trees[tree_idx].root);
+    diff->tex_dump.print_steps = false;
+    optimizeTree(diff, tree_idx);
+    diff->tex_dump.print_steps = true;
+    TREE_DUMP(diff, tree_idx, STATUS_OK, "Optimizing Taylor Tree");
 
     char output_filename[BUFFER_SIZE] = "";
     snprintf(output_filename, BUFFER_SIZE, "%s/%s_%03zu", GNUPLOT_IMAGES_DIRECTORY,
         GNUPLOT_OUTPUT_FILENAME, tree_idx);
 
     OperationStatus status = generatePlot(diff, output_filename, 2, 0, tree_idx);
-    
-    treeDestructor(&diff->forest.trees[tree_idx]);
-    if (status != STATUS_OK) return;
 
-    printTex(diff,
-        "Сравнительный график исходной функции и ее разложения представлен ниже:\n"
-        "\\begin{figure}[H]\n"
-        "\\centering\n"
-        "\\includegraphics[width=0.8\\textwidth]{%s}\n"
-        "\\caption{Сравнение исходной функции и ее разложения по формуле Тейлора.}\n"
-        "\\end{figure}\n", diff->args.taylor_info.center, output_filename);
+    if (status == STATUS_OK) {
+        printTaylorSeries(diff, output_filename, tree_idx);
+    }
+
+    treeDestructor(&diff->forest.trees[tree_idx]);
+    return status;
+
 }
 
 
@@ -67,7 +63,7 @@ TreeNode* createTaylorTree(Differentiator* diff, size_t derivative_counter)
     assert(diff); assert(diff->forest.trees); assert(diff->forest.count);
 
     if (derivative_counter > diff->args.derivative_info.order) {
-        return CNUM(0);
+        return NULL;
     }
 
     double derivative_value = evaluateNode(diff,

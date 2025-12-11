@@ -31,7 +31,12 @@ int main(const int argc, const char** argv)
 
     status = diffLoadExpression(&diff);
     if (status == STATUS_OK) {
-        printIntroduction(&diff);
+        if (diff.var_table.count == 0) {
+            status = STATUS_DIFF_CONST_EXPRESSION;
+            
+        } else {
+            printIntroduction(&diff);
+        }
     }
 
     if (status == STATUS_OK && diff.args.derivative_info.compute) {
@@ -39,8 +44,12 @@ int main(const int argc, const char** argv)
     }
     if (status == STATUS_OK) {
         for (size_t index = 1; index <= diff.args.derivative_info.order; index++) {
-            fprintf(diff.tex_dump.file, "\\chapter{%zu-я производная}", index);
-            status = diffCalculateDerivative(&diff, 0);
+            if (index > 3) {
+                diff.tex_dump.print_steps = false;
+            }
+
+            printTex(&diff, "\\chapter{%zu-я производная}", index);
+            status = diffCalculateDerivative(&diff, index - 1);
             if (status != STATUS_OK) {
                 break;
             }

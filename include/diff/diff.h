@@ -3,13 +3,14 @@
 
 
 #include "diff/diff_defs.h"
+
 #include "status.h"
 
 
 void printErrorStatus(OperationStatus status);
 
 
-OperationStatus diffCalculateDerivative(Differentiator* diff, size_t var_idx);
+OperationStatus diffCalculateDerivative(Differentiator* diff, size_t tree_idx);
 
 
 OperationStatus diffConstructor(Differentiator* diff, const int argc, const char** argv);
