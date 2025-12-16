@@ -25,13 +25,15 @@ static void skipWhitespaces(char** buffer);
 TreeNode* getTree(Differentiator* diff, char** buffer)
 {
     assert(diff); assert(buffer); assert(*buffer);
-    
+   
     skipWhitespaces(buffer);
     TreeNode* node = getExpression(diff, buffer);
     skipWhitespaces(buffer);
-    if (**buffer != '$') {
+    if (**buffer != '\n' && **buffer != '\0') {
         fprintf(stderr, "Syntax error in getTree!\n");
-        if (node) deleteBranch(node);
+        if (node) {
+            deleteBranch(node);
+        }
         return NULL;
     }
 
@@ -409,7 +411,7 @@ static void skipWhitespaces(char** buffer)
 {
     assert(buffer); assert(*buffer);
 
-    while (isspace(**buffer)) {
+    while (**buffer == '\t' || **buffer == ' ') {
         (*buffer)++;
     }
 }

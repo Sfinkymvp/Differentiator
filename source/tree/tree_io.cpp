@@ -25,7 +25,8 @@ static OperationStatus readNode(TreeNode** node, Differentiator* diff,
 static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
     char* src_code, int* position);
 
-static void getPlotRange(Differentiator* diff, char* buffer);
+static OperationStatus getFunctionName(Differentiator* diff, char* buffer, size_t length);
+static void getParameters(Differentiator* diff, char* buffer);
 
 static OpType getOpType(const char* buffer);
 static inline void skipWhitespaces(char* src_code, int* position);
@@ -77,9 +78,15 @@ static OperationStatus treeInfixLoad(Differentiator* diff, size_t tree_idx, FILE
         return STATUS_IO_FILE_READ_ERROR;
     }
 
-    char* buffer = src_code;
+    char* buffer = strchr(src_code, '=') + 1;
+    size_t length = (size_t)(buffer - src_code);
+    OperationStatus status = getFunctionName(diff, src_code, length);
+    if (status != STATUS_OK) {
+        free(src_code);
+        return status;
+    }
     diff->forest.trees[tree_idx].root = getTree(diff, &buffer);
-    getPlotRange(diff, buffer);
+    getParameters(diff, buffer);
 
     free(src_code);
     if (diff->forest.trees[tree_idx].root == NULL) {
@@ -213,19 +220,42 @@ static OperationStatus readTitle(TreeNode* node, Differentiator* diff,
 }
 
 
-static void getPlotRange(Differentiator* diff, char* buffer)
+static OperationStatus getFunctionName(Differentiator* diff, char* buffer, size_t length)
+{
+    assert(diff); assert(buffer);
+
+    char* temp = (char*)calloc(length + 1, sizeof(char));
+    if (temp == NULL) {
+        return STATUS_SYSTEM_OUT_OF_MEMORY;
+    }
+    memcpy(temp, buffer, length);
+    temp[length] = '\0';
+
+    diff->tex_dump.function_name = temp;
+    
+    return STATUS_OK;
+}
+
+
+static void getParameters(Differentiator* diff, char* buffer)
 {
     assert(diff); assert(buffer);
 
     double x_min =0, x_max = 0, y_min = 0, y_max = 0;
+    size_t order = 0;
+    double x_0 = 0;
     PlotRange* range = &diff->tex_dump.range;
-    int scan_result = sscanf(buffer, "x=[%lf:%lf],y=[%lf:%lf]", &x_min, &x_max,
-        &y_min, &y_max);
-    if (scan_result == 4) {
+    int scan_result = sscanf(buffer, " x=[%lf:%lf], y=[%lf:%lf], order=%zu, x_0=%lf", 
+        &x_min, &x_max, &y_min, &y_max, &order, &x_0);
+
+    if (scan_result == 6) {
         range->x_min = x_min;
         range->x_max = x_max;
         range->y_min = y_min;
         range->y_max = y_max;
+        diff->args.derivative_info.order = order;
+        diff->args.taylor_info.decomposition = true;
+        diff->args.taylor_info.center = x_0;
     }
 }
 

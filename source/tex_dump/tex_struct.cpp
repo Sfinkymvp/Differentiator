@@ -134,8 +134,8 @@ void printTaylorSeries(Differentiator* diff, const char* output_filename, size_t
 
     printTex(diff,
         "\\chapter{Разложение функции по формуле Тейлора}\n"
-        "Исходное выражение имеет следующий вид:\n\\begin{dmath*}\n%n\n\\end{dmath*}\n",
-        diff->forest.trees[0].root);
+        "Исходное выражение имеет следующий вид:");
+    printExpression(diff, 0);
 
     printTex(diff, "Выполним разложение функции по формуле Тейлора в окрестности точки $%s_0 = %g$ "
         "с остаточным членом в форме Пеано:\n", diff->var_table.variables[diff->args.derivative_info.diff_var_idx],

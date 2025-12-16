@@ -151,6 +151,8 @@ void diffDestructor(Differentiator* diff)
     free(diff->forest.trees);
     diff->forest.trees = NULL;
 
+    free(diff->tex_dump.function_name);
+
     for (size_t index = 0; index < diff->var_table.count; index++)
         free(diff->var_table.variables[index].name);
     free(diff->var_table.variables);

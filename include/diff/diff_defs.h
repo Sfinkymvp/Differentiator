@@ -31,6 +31,7 @@ typedef struct {
     FILE* file;
     char filename[BUFFER_SIZE];
     PlotRange range;
+    char* function_name;
     bool print_steps;
 } TexDumpState;
 

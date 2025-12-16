@@ -23,7 +23,20 @@ void printExpression(Differentiator* diff, size_t tree_idx)
 {
     assert(diff); assert(diff->forest.trees); assert(tree_idx <= diff->forest.count);
 
-    printTex(diff, "\\begin{dmath*}\n%n\n\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
+    
+    printTex(diff, "\\begin{dmath*}\n\\text{%s}", diff->tex_dump.function_name);
+    printTex(diff, "%n\n\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
+    /*if (tree_idx > 0 && tree_idx < diff->args.derivative_info.order) {
+        if (tree_idx > 3) {
+            printTex(diff, "^{(%zu)}", tree_idx);
+        } else {
+            for (size_t index = 0; index < tree_idx; index++) {
+                printTex(diff, "'");
+            }
+        }
+    }*/
+
+    //printTex(diff, " = %n\n\\end{dmath*}\n\n", diff->forest.trees[tree_idx].root);
 }
 
 

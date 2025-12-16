@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "math.h"
+#include <math.h>
 #include <assert.h>
 
 #include "diff/diff_defs.h"
@@ -65,7 +65,7 @@ int main(const int argc, const char** argv)
                 diffEvaluate(&diff, index);
 
             if (index > 0) {
-            printPlot(&diff, index);
+                printPlot(&diff, index);
             }
         }
     }
