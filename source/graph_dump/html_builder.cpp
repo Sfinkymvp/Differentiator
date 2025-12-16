@@ -91,6 +91,7 @@ void treeDump(Differentiator* diff, size_t tree_idx, OperationStatus status, con
         system(command);
     }
 
+    snprintf(graph_svg_file, BUFFER_SIZE * 2, "tree_graph_%03zu.svg", diff->graph_dump.image_counter);
     createHtmlDump(diff, &diff->forest.trees[tree_idx], &info, graph_svg_file);
 
     diff->graph_dump.image_counter++;

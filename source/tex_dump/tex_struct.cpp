@@ -166,13 +166,7 @@ OperationStatus texClose(Differentiator* diff)
     snprintf(command, BUFFER_SIZE * 2, "xelatex -interaction=batchmode -output-directory=%s %s > /dev/null",
         TEX_DIRECTORY, diff->tex_dump.filename);
     int result = system(command);
-    if (result != 0) {
-        return STATUS_SYSTEM_CALL_ERROR;
-    }
     result = system(command);
-    if (result != 0) {
-        return STATUS_SYSTEM_CALL_ERROR;
-    }
 
     snprintf(command, BUFFER_SIZE * 2, "rm %s.toc %s.log %s.aux %s.out", TEX_FILENAME,
         TEX_FILENAME, TEX_FILENAME, TEX_FILENAME);

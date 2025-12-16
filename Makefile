@@ -46,7 +46,7 @@ clean:
 
 
 diff: FLAGS += -DDEBUG
-diff: $(FILES) $(DEBUG_FILES)
+diff: $(FILES)
 	@g++ $(FILES) $(FLAGS) -o $(BUILDDIR)/$(OUTPUT_NAME)
 
 

@@ -20,6 +20,9 @@
 #include "tree/tree_io.h"
 
 
+const size_t MAX_ORDER_FOR_OUTPUT = 2;
+
+
 int main(const int argc, const char** argv)
 {
     Differentiator diff = {};
@@ -43,22 +46,27 @@ int main(const int argc, const char** argv)
         status = defineVariables(&diff);
     }
     if (status == STATUS_OK) {
-        for (size_t index = 1; index <= diff.args.derivative_info.order; index++) {
-            if (index > 3) {
+        for (size_t index = 0; index <= diff.args.derivative_info.order; index++) {
+            if (index > MAX_ORDER_FOR_OUTPUT) {
                 diff.tex_dump.print_steps = false;
             }
 
-            printTex(&diff, "\\chapter{%zu-я производная}", index);
-            status = diffCalculateDerivative(&diff, index - 1);
-            if (status != STATUS_OK) {
-                break;
+            if (index > 0) {
+                printTex(&diff, "\\chapter{%zu-я производная}", index);
+                status = diffCalculateDerivative(&diff, index - 1);
+                if (status != STATUS_OK) {
+                    break;
+                }
+
+                optimizeTree(&diff, index);
             }
 
-            optimizeTree(&diff, index);
             if (diff.args.derivative_info.compute)
                 diffEvaluate(&diff, index);
 
+            if (index > 0) {
             printPlot(&diff, index);
+            }
         }
     }
 

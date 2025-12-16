@@ -189,9 +189,13 @@ static void printScriptInfo(Differentiator* diff, const char* output_filename,
             setVariableValue(diff, diff->args.derivative_info.diff_var_idx, x);
             double y = evaluateNode(diff, diff->forest.trees[tree_indexes[index]].root);
 
+            double slope = evaluateNode(diff, diff->forest.trees[1].root);
             fprintf(script_file, 
-                ", \\\n    \"\" using (%lf):(%lf) with points pt 3 ps 1 lc 'red' "
+                ", \\\n    \"\" using (%lf):(%lf) with points pt 3 ps 0.8 lc 'red' "
                 "title 'Центр разложения'", x, y);
+
+            fprintf(script_file, ", \\\n %lf * (x - %lf) + %lf with lines dt 3 "
+                "lc 'black' title 'Касательная'", slope, x, y);
         } else {
             fprintf(script_file, " title '%zu-я производная'", tree_indexes[index]);
         }

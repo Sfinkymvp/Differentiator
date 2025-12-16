@@ -85,10 +85,18 @@ void diffEvaluate(Differentiator* diff, size_t tree_idx)
     assert(diff->forest.trees[tree_idx].root);
 
     double value = evaluateNode(diff, diff->forest.trees[diff->forest.count - 1].root);
-    if (!isnan(value)) {
-        printf("Value of %zu derivative: %g\n", tree_idx, value);
+    if (tree_idx == 0) {
+        if (!isnan(value)) {
+            printf("Value of function: %g\n", value);
+        } else {
+            printf("Value of function is not defined\n");
+        }
     } else {
-        printf("Value of %zu derivative is not defined\n", tree_idx);
+        if (!isnan(value)) {
+            printf("Value of %zu derivative: %g\n", tree_idx, value);
+        } else {
+            printf("Value of %zu derivative is not defined\n", tree_idx);
+        }
     }
 };
 
